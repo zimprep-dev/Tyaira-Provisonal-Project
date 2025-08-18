@@ -3,7 +3,7 @@
 {% block title %}Home - Driver Testing Platform{% endblock %}
 
 {% block content %}
-<div class="hero">
+<div class="hero" id="heroSection">
     <h1>🚗 Zimbabwe Provisional Driver Testing Platform</h1>
     <p class="hero-subtitle">Practice and prepare for your computerized provisional driver testing exam</p>
     <div class="hero-buttons">
@@ -13,6 +13,35 @@
         {% else %}
             <a href="{{ url_for('take_test') }}" class="btn btn-primary">Take a Test</a>
             <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">View Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="test-section" id="test-section">
+    <h2>🎯 Try a Sample Question</h2>
+    <div class="sample-question">
+        <p class="question-text">What should you do when approaching a red traffic light?</p>
+        <div class="question-options">
+            <button class="option-button" onclick="showTestAnswer('A')">
+                A) Speed up to get through quickly
+            </button>
+            <button class="option-button" onclick="showTestAnswer('B')">
+                B) Stop and wait for green light
+            </button>
+            <button class="option-button" onclick="showTestAnswer('C')">
+                C) Ignore the light if no cars are coming
+            </button>
+        </div>
+        <div id="test-result" class="question-result" style="display: none;"></div>
+    </div>
+    <div class="test-note">
+        <p><strong>Ready for more?</strong> Create an account to access our full library of practice questions and track your progress!</p>
+    </div>
+    <div class="test-actions">
+        {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('register') }}" class="btn btn-primary">Start Full Practice Test</a>
+        {% else %}
+            <a href="{{ url_for('take_test') }}" class="btn btn-primary">Start Full Practice Test</a>
         {% endif %}
     </div>
 </div>
@@ -33,24 +62,6 @@
     <div class="feature-card">
         <h3>⏱️ Timed Practice</h3>
         <p>Simulate real exam conditions with timed tests</p>
-    </div>
-</div>
-
-<div class="preview-section">
-    <h2>Try a Sample Question</h2>
-    <div class="preview-test">
-        <div class="question">
-            <p><strong>What should you do when approaching a red traffic light?</strong></p>
-            <div class="options">
-                <button class="option-btn" onclick="showPreviewAnswer('A')">A) Speed up to get through quickly</button>
-                <button class="option-btn" onclick="showPreviewAnswer('B')">B) Stop and wait for green light</button>
-                <button class="option-btn" onclick="showPreviewAnswer('C')">C) Ignore the light if no cars are coming</button>
-            </div>
-            <div id="preview-result" class="preview-result"></div>
-        </div>
-        <div class="preview-note">
-            <p><em>Create an account to see your answer and take full tests!</em></p>
-        </div>
     </div>
 </div>
 
@@ -87,20 +98,30 @@
 </div>
 
 <script>
-function showPreviewAnswer(selected) {
-    const resultDiv = document.getElementById('preview-result');
+function showTestAnswer(selected) {
+    const resultDiv = document.getElementById('test-result');
     const correctAnswer = 'B';
     
     if (selected === correctAnswer) {
-        resultDiv.innerHTML = '<div class="correct">✓ Correct! That\'s the right answer.</div>';
+        resultDiv.innerHTML = '<div class="result-correct">✓ Correct! That\'s the right answer.</div>';
+        resultDiv.className = 'question-result result-correct';
     } else {
-        resultDiv.innerHTML = '<div class="incorrect">✗ Incorrect. The correct answer is B) Stop and wait for green light.</div>';
+        resultDiv.innerHTML = '<div class="result-incorrect">✗ Incorrect. The correct answer is B) Stop and wait for green light.</div>';
+        resultDiv.className = 'question-result result-incorrect';
     }
     
+    resultDiv.style.display = 'block';
+    
     // Disable all buttons after selection
-    document.querySelectorAll('.option-btn').forEach(btn => {
+    document.querySelectorAll('.option-button').forEach(btn => {
         btn.disabled = true;
         btn.style.opacity = '0.6';
+    });
+}
+
+function scrollToSection(sectionId) {
+    document.getElementById(sectionId).scrollIntoView({ 
+        behavior: 'smooth' 
     });
 }
 </script>

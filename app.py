@@ -69,6 +69,7 @@ def load_questions():
                 "correct_answer": "C",
                 "category": "Speed Limits"
             },
+
             {
                 "question_text": "When should you use your hazard lights?",
                 "option_a": "When driving in rain",
@@ -76,7 +77,8 @@ def load_questions():
                 "option_c": "When you're in a hurry",
                 "correct_answer": "B",
                 "category": "Safety"
-            }
+
+            },  
         ]
         
         for q_data in sample_questions:
