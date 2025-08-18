@@ -17,32 +17,122 @@
     </div>
 </div>
 
-<div class="test-section" id="test-section">
-    <h2>🎯 Try a Sample Question</h2>
-    <div class="sample-question">
-        <p class="question-text">What should you do when approaching a red traffic light?</p>
-        <div class="question-options">
-            <button class="option-button" onclick="showTestAnswer('A')">
-                A) Speed up to get through quickly
-            </button>
-            <button class="option-button" onclick="showTestAnswer('B')">
-                B) Stop and wait for green light
-            </button>
-            <button class="option-button" onclick="showTestAnswer('C')">
-                C) Ignore the light if no cars are coming
-            </button>
+
+<div class="info-section">
+    <h2>📋 About Zimbabwe Provisional Driving Tests</h2>
+    
+    <div class="info-grid">
+        <div class="info-card">
+            <h3>🎯 Why Take the Test?</h3>
+            <p>The provisional driving test is a mandatory requirement in Zimbabwe to obtain your learner's permit. It ensures you understand road safety rules, traffic signs, and driving regulations before getting behind the wheel. This computerized test validates your theoretical knowledge of the Highway Code and prepares you for safe driving practices.</p>
         </div>
-        <div id="test-result" class="question-result" style="display: none;"></div>
+        
+        <div class="info-card">
+            <h3>📋 Requirements</h3>
+            <ul>
+                <li><strong>Fee:</strong> $20 USD</li>
+                <li><strong>Identification:</strong> Copy of National ID or Passport</li>
+                <li><strong>Age:</strong> Minimum 16 years old</li>
+                <li><strong>Duration:</strong> Approximately 10 minutes</li>
+                <li><strong>Pass Mark:</strong> 80% or higher</li>
+            </ul>
+        </div>
+        
+        <div class="info-card">
+            <h3>⚠️ What to Look Out For</h3>
+            <ul>
+                <li>Read questions carefully - some have tricky wording</li>
+                <li>Pay attention to road sign shapes and colors</li>
+                <li>Understand right-of-way rules at intersections</li>
+                <li>Know speed limits for different road types</li>
+                <li>Focus on safety-related questions</li>
+                <li>Practice time management during the test</li>
+            </ul>
+        </div>
+        
+        <div class="info-card">
+            <h3>🚦 How the System Works</h3>
+            <p>Zimbabwe's computerized provisional testing system is administered by VID (Vehicle Inspection Department). The test is conducted on computers at VID offices nationwide. Questions are randomly selected from a database covering all aspects of road safety and traffic regulations. Results are immediately available upon completion.</p>
+        </div>
     </div>
-    <div class="test-note">
-        <p><strong>Ready for more?</strong> Create an account to access our full library of practice questions and track your progress!</p>
-    </div>
-    <div class="test-actions">
-        {% if not current_user.is_authenticated %}
-            <a href="{{ url_for('register') }}" class="btn btn-primary">Start Full Practice Test</a>
-        {% else %}
-            <a href="{{ url_for('take_test') }}" class="btn btn-primary">Start Full Practice Test</a>
-        {% endif %}
+</div>
+
+<div class="test-areas-section">
+    <h2>📚 Test Areas & Topics</h2>
+    <p class="section-subtitle">The provisional test covers these key areas of road safety and traffic regulations:</p>
+    
+    <div class="test-areas-grid">
+        <div class="test-area-card">
+            <div class="area-icon">🚦</div>
+            <h3>Traffic Signs & Signals</h3>
+            <ul>
+                <li>Warning signs (triangular, yellow)</li>
+                <li>Regulatory signs (circular, red/white)</li>
+                <li>Information signs (rectangular, blue)</li>
+                <li>Traffic light meanings and arrows</li>
+                <li>Road markings and lane indicators</li>
+            </ul>
+        </div>
+        
+        <div class="test-area-card">
+            <div class="area-icon">⚡</div>
+            <h3>Speed Limits & Rules</h3>
+            <ul>
+                <li>Residential areas: 40 km/h</li>
+                <li>Urban areas: 60 km/h</li>
+                <li>Rural roads: 80-120 km/h</li>
+                <li>School zones and special areas</li>
+                <li>Weather-related speed adjustments</li>
+            </ul>
+        </div>
+        
+        <div class="test-area-card">
+            <div class="area-icon">🛣️</div>
+            <h3>Road Rules & Right of Way</h3>
+            <ul>
+                <li>Intersection navigation</li>
+                <li>Roundabout entry and exit</li>
+                <li>Overtaking procedures</li>
+                <li>Following distances</li>
+                <li>Lane changing protocols</li>
+            </ul>
+        </div>
+        
+        <div class="test-area-card">
+            <div class="area-icon">🚗</div>
+            <h3>Vehicle Safety & Controls</h3>
+            <ul>
+                <li>Pre-driving vehicle checks</li>
+                <li>Seatbelt and safety equipment</li>
+                <li>Lights and indicators usage</li>
+                <li>Emergency procedures</li>
+                <li>Vehicle maintenance basics</li>
+            </ul>
+        </div>
+        
+        <div class="test-area-card">
+            <div class="area-icon">⚠️</div>
+            <h3>Emergency & Special Situations</h3>
+            <ul>
+                <li>Accident procedures and reporting</li>
+                <li>Hazard light usage</li>
+                <li>Parking regulations</li>
+                <li>Pedestrian and cyclist safety</li>
+                <li>Weather-related driving</li>
+            </ul>
+        </div>
+        
+        <div class="test-area-card">
+            <div class="area-icon">📖</div>
+            <h3>Highway Code Knowledge</h3>
+            <ul>
+                <li>Legal requirements for drivers</li>
+                <li>License classifications</li>
+                <li>Alcohol and drug regulations</li>
+                <li>Insurance and documentation</li>
+                <li>Traffic enforcement rules</li>
+            </ul>
+        </div>
     </div>
 </div>
 
@@ -65,35 +155,38 @@
     </div>
 </div>
 
-<div class="pricing">
-    <h2>Choose Your Plan</h2>
-    <div class="pricing-cards">
-        <div class="pricing-card">
-            <h3>Free Tier</h3>
-            <div class="price">$0/month</div>
-            <ul>
-                <li>2 tests per day</li>
-                <li>3 PDF downloads</li>
-                <li>Basic performance tracking</li>
-            </ul>
+<div class="test-section" id="test-section">
+    <h2>🎯 Try a Sample Question</h2>
+    <div class="sample-question">
+        <p class="question-text">What should you do when approaching a red traffic light?</p>
+        <div class="question-options">
+            <label class="option-radio" onclick="showTestAnswer('A')">
+                <input type="radio" name="sample-question" value="A">
+                <span class="radio-custom"></span>
+                <span class="option-text">Speed up to get through quickly</span>
+            </label>
+            <label class="option-radio" onclick="showTestAnswer('B')">
+                <input type="radio" name="sample-question" value="B">
+                <span class="radio-custom"></span>
+                <span class="option-text">Stop and wait for green light</span>
+            </label>
+            <label class="option-radio" onclick="showTestAnswer('C')">
+                <input type="radio" name="sample-question" value="C">
+                <span class="radio-custom"></span>
+                <span class="option-text">Ignore the light if no cars are coming</span>
+            </label>
         </div>
-        <div class="pricing-card featured">
-            <h3>Premium</h3>
-            <div class="price">$3/month</div>
-            <ul>
-                <li>Unlimited tests</li>
-                <li>Unlimited PDF downloads</li>
-                <li>Full performance analytics</li>
-                <li>Priority support</li>
-            </ul>
-            {% if current_user.is_authenticated and not current_user.is_subscriber %}
-                <a href="{{ url_for('subscribe') }}" class="btn btn-primary">Subscribe Now</a>
-            {% elif current_user.is_authenticated and current_user.is_subscriber %}
-                <span class="subscribed">✓ Subscribed</span>
-            {% else %}
-                <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
-            {% endif %}
-        </div>
+        <div id="test-result" class="question-result" style="display: none;"></div>
+    </div>
+    <div class="test-note">
+        <p><strong>Ready for more?</strong> Create an account to access our full library of practice questions and track your progress!</p>
+    </div>
+    <div class="test-actions">
+        {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('register') }}" class="btn btn-primary">Start Full Practice Test</a>
+        {% else %}
+            <a href="{{ url_for('take_test') }}" class="btn btn-primary">Start Full Practice Test</a>
+        {% endif %}
     </div>
 </div>
 
@@ -112,10 +205,9 @@ function showTestAnswer(selected) {
     
     resultDiv.style.display = 'block';
     
-    // Disable all buttons after selection
-    document.querySelectorAll('.option-button').forEach(btn => {
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
+    // Disable all radio options after selection
+    document.querySelectorAll('.option-radio').forEach(option => {
+        option.classList.add('disabled');
     });
 }
 
