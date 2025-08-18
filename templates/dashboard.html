@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Driver Testing Platform{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>Welcome, {{ user.username }}! 🚗</h1>
+        <div class="user-status">
+            {% if user.is_subscriber %}
+                <span class="status-badge subscribed">✓ Premium Subscriber</span>
+            {% else %}
+                <span class="status-badge free">Free Tier</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h3>Tests Taken</h3>
+            <div class="stat-number">{{ user.tests|length }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Downloads Used</h3>
+            <div class="stat-number">{{ user.downloads_count }}/3</div>
+        </div>
+        {% if user.is_subscriber %}
+            <div class="stat-card">
+                <h3>Subscription</h3>
+                <div class="stat-number">Active</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-actions">
+        <div class="action-card">
+            <h3>Take a Test</h3>
+            <p>Practice with our interactive driving test questions</p>
+            <a href="{{ url_for('take_test') }}" class="btn btn-primary">Start Test</a>
+        </div>
+        
+        <div class="action-card">
+            <h3>Download Resources</h3>
+            <p>Get study materials and practice questions</p>
+            <a href="{{ url_for('download_pdf') }}" class="btn btn-secondary">Download PDF</a>
+        </div>
+        
+        {% if not user.is_subscriber %}
+        <div class="action-card featured">
+            <h3>Upgrade to Premium</h3>
+            <p>Get unlimited access for just $3/month</p>
+            <a href="{{ url_for('subscribe') }}" class="btn btn-primary">Subscribe Now</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if tests %}
+    <div class="recent-tests">
+        <h2>Recent Test Results</h2>
+        <div class="test-results">
+            {% for test in tests %}
+            <div class="test-result">
+                <div class="test-date">{{ test.test_date.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div class="test-score">
+                    <span class="score">{{ test.score }}/{{ test.total_questions }}</span>
+                    <span class="percentage">({{ "%.1f"|format(test.score / test.total_questions * 100) }}%)</span>
+                </div>
+                <div class="test-time">{{ test.time_taken }}s</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
