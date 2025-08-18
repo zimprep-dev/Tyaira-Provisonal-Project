@@ -3,30 +3,32 @@
 {% block title %}Dashboard - Driver Testing Platform{% endblock %}
 
 {% block content %}
+<!-- Feather Icons -->
+<script src="https://unpkg.com/feather-icons"></script>
 <div class="dashboard">
     <div class="dashboard-header">
-        <h1>Welcome, {{ user.username }}! 🚗</h1>
+        <h1><i data-feather="user" class="dashboard-icon"></i> Welcome, {{ user.username }}!</h1>
         <div class="user-status">
             {% if user.is_subscriber %}
-                <span class="status-badge subscribed">✓ Premium Subscriber</span>
+                <span class="status-badge subscribed"><i data-feather="star" class="badge-icon"></i> Premium Subscriber</span>
             {% else %}
-                <span class="status-badge free">Free Tier</span>
+                <span class="status-badge free"><i data-feather="user" class="badge-icon"></i> Free Tier</span>
             {% endif %}
         </div>
     </div>
 
     <div class="dashboard-stats">
         <div class="stat-card">
-            <h3>Tests Taken</h3>
+            <h3><i data-feather="check-circle" class="stat-icon"></i> Tests Taken</h3>
             <div class="stat-number">{{ user.tests|length }}</div>
         </div>
         <div class="stat-card">
-            <h3>Downloads Used</h3>
+            <h3><i data-feather="download" class="stat-icon"></i> Downloads Used</h3>
             <div class="stat-number">{{ user.downloads_count }}/3</div>
         </div>
         {% if user.is_subscriber %}
             <div class="stat-card">
-                <h3>Subscription</h3>
+                <h3><i data-feather="star" class="stat-icon"></i> Subscription</h3>
                 <div class="stat-number">Active</div>
             </div>
         {% endif %}
@@ -34,20 +36,20 @@
 
     <div class="dashboard-actions">
         <div class="action-card">
-            <h3>Take a Test</h3>
+            <h3><i data-feather="play-circle" class="action-icon"></i> Take a Test</h3>
             <p>Practice with our interactive driving test questions</p>
             <a href="{{ url_for('take_test') }}" class="btn btn-primary">Start Test</a>
         </div>
         
         <div class="action-card">
-            <h3>Download Resources</h3>
+            <h3><i data-feather="download-cloud" class="action-icon"></i> Download Resources</h3>
             <p>Get study materials and practice questions</p>
             <a href="{{ url_for('download_pdf') }}" class="btn btn-secondary">Download PDF</a>
         </div>
         
         {% if not user.is_subscriber %}
         <div class="action-card featured">
-            <h3>Upgrade to Premium</h3>
+            <h3><i data-feather="zap" class="action-icon"></i> Upgrade to Premium</h3>
             <p>Get unlimited access for just $3/month</p>
             <a href="{{ url_for('subscribe') }}" class="btn btn-primary">Subscribe Now</a>
         </div>
@@ -56,7 +58,7 @@
 
     {% if tests %}
     <div class="recent-tests">
-        <h2>Recent Test Results</h2>
+        <h2><i data-feather="activity" class="section-icon"></i> Recent Test Results</h2>
         <div class="test-results">
             {% for test in tests %}
             <div class="test-result">
@@ -72,4 +74,9 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+</script>
 {% endblock %}

@@ -499,6 +499,77 @@ body {
     left: 0;
 }
 
+/* Icon Styling */
+.hero-icon {
+    width: 48px;
+    height: 48px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    color: #28a745;
+    stroke-width: 1.5;
+}
+
+.section-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 0.75rem;
+    vertical-align: middle;
+    color: #28a745;
+    stroke-width: 2;
+}
+
+.card-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    color: #28a745;
+    stroke-width: 2;
+}
+
+.area-icon i {
+    width: 40px;
+    height: 40px;
+    color: #667eea;
+    stroke-width: 1.5;
+}
+
+/* Dashboard Icon Styling */
+.dashboard-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 0.75rem;
+    vertical-align: middle;
+    color: #28a745;
+    stroke-width: 2;
+}
+
+.badge-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    stroke-width: 2;
+}
+
+.stat-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    color: #667eea;
+    stroke-width: 2;
+}
+
+.action-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 0.75rem;
+    vertical-align: middle;
+    color: #667eea;
+    stroke-width: 2;
+}
+
 /* Legacy Preview Section (for backward compatibility) */
 .preview-section {
     background: white;

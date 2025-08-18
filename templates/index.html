@@ -3,8 +3,10 @@
 {% block title %}Home - Driver Testing Platform{% endblock %}
 
 {% block content %}
+<!-- Feather Icons -->
+<script src="https://unpkg.com/feather-icons"></script>
 <div class="hero" id="heroSection">
-    <h1>🚗 Zimbabwe Provisional Driver Testing Platform</h1>
+    <h1><i data-feather="truck" class="hero-icon"></i> Zimbabwe Provisional Driver Testing Platform</h1>
     <p class="hero-subtitle">Practice and prepare for your computerized provisional driver testing exam</p>
     <div class="hero-buttons">
         {% if not current_user.is_authenticated %}
@@ -19,16 +21,16 @@
 
 
 <div class="info-section">
-    <h2>📋 About Zimbabwe Provisional Driving Tests</h2>
+    <h2><i data-feather="clipboard" class="section-icon"></i> About Zimbabwe Provisional Driving Tests</h2>
     
     <div class="info-grid">
         <div class="info-card">
-            <h3>🎯 Why Take the Test?</h3>
+            <h3><i data-feather="target" class="card-icon"></i> Why Take the Test?</h3>
             <p>The provisional driving test is a mandatory requirement in Zimbabwe to obtain your learner's permit. It ensures you understand road safety rules, traffic signs, and driving regulations before getting behind the wheel. This computerized test validates your theoretical knowledge of the Highway Code and prepares you for safe driving practices.</p>
         </div>
         
         <div class="info-card">
-            <h3>📋 Requirements</h3>
+            <h3><i data-feather="check-square" class="card-icon"></i> Requirements</h3>
             <ul>
                 <li><strong>Fee:</strong> $20 USD</li>
                 <li><strong>Identification:</strong> Copy of National ID or Passport</li>
@@ -39,7 +41,7 @@
         </div>
         
         <div class="info-card">
-            <h3>⚠️ What to Look Out For</h3>
+            <h3><i data-feather="alert-triangle" class="card-icon"></i> What to Look Out For</h3>
             <ul>
                 <li>Read questions carefully - some have tricky wording</li>
                 <li>Pay attention to road sign shapes and colors</li>
@@ -51,19 +53,19 @@
         </div>
         
         <div class="info-card">
-            <h3>🚦 How the System Works</h3>
+            <h3><i data-feather="monitor" class="card-icon"></i> How the System Works</h3>
             <p>Zimbabwe's computerized provisional testing system is administered by VID (Vehicle Inspection Department). The test is conducted on computers at VID offices nationwide. Questions are randomly selected from a database covering all aspects of road safety and traffic regulations. Results are immediately available upon completion.</p>
         </div>
     </div>
 </div>
 
 <div class="test-areas-section">
-    <h2>📚 Test Areas & Topics</h2>
+    <h2><i data-feather="book-open" class="section-icon"></i> Test Areas & Topics</h2>
     <p class="section-subtitle">The provisional test covers these key areas of road safety and traffic regulations:</p>
     
     <div class="test-areas-grid">
         <div class="test-area-card">
-            <div class="area-icon">🚦</div>
+            <div class="area-icon"><i data-feather="traffic-light"></i></div>
             <h3>Traffic Signs & Signals</h3>
             <ul>
                 <li>Warning signs (triangular, yellow)</li>
@@ -75,7 +77,7 @@
         </div>
         
         <div class="test-area-card">
-            <div class="area-icon">⚡</div>
+            <div class="area-icon"><i data-feather="zap"></i></div>
             <h3>Speed Limits & Rules</h3>
             <ul>
                 <li>Residential areas: 40 km/h</li>
@@ -87,7 +89,7 @@
         </div>
         
         <div class="test-area-card">
-            <div class="area-icon">🛣️</div>
+            <div class="area-icon"><i data-feather="navigation"></i></div>
             <h3>Road Rules & Right of Way</h3>
             <ul>
                 <li>Intersection navigation</li>
@@ -99,7 +101,7 @@
         </div>
         
         <div class="test-area-card">
-            <div class="area-icon">🚗</div>
+            <div class="area-icon"><i data-feather="truck"></i></div>
             <h3>Vehicle Safety & Controls</h3>
             <ul>
                 <li>Pre-driving vehicle checks</li>
@@ -111,7 +113,7 @@
         </div>
         
         <div class="test-area-card">
-            <div class="area-icon">⚠️</div>
+            <div class="area-icon"><i data-feather="alert-circle"></i></div>
             <h3>Emergency & Special Situations</h3>
             <ul>
                 <li>Accident procedures and reporting</li>
@@ -123,7 +125,7 @@
         </div>
         
         <div class="test-area-card">
-            <div class="area-icon">📖</div>
+            <div class="area-icon"><i data-feather="book"></i></div>
             <h3>Highway Code Knowledge</h3>
             <ul>
                 <li>Legal requirements for drivers</li>
@@ -138,25 +140,25 @@
 
 <div class="features">
     <div class="feature-card">
-        <h3>📚 Interactive Tests</h3>
+        <h3><i data-feather="play-circle" class="card-icon"></i> Interactive Tests</h3>
         <p>Practice with randomized questions covering all aspects of provisional driving</p>
     </div>
     <div class="feature-card">
-        <h3>📖 Study Resources</h3>
+        <h3><i data-feather="download" class="card-icon"></i> Study Resources</h3>
         <p>Download comprehensive PDF materials to study offline</p>
     </div>
     <div class="feature-card">
-        <h3>📊 Performance Tracking</h3>
+        <h3><i data-feather="bar-chart-2" class="card-icon"></i> Performance Tracking</h3>
         <p>Monitor your progress and identify areas for improvement</p>
     </div>
     <div class="feature-card">
-        <h3>⏱️ Timed Practice</h3>
+        <h3><i data-feather="clock" class="card-icon"></i> Timed Practice</h3>
         <p>Simulate real exam conditions with timed tests</p>
     </div>
 </div>
 
 <div class="test-section" id="test-section">
-    <h2>🎯 Try a Sample Question</h2>
+    <h2><i data-feather="target" class="section-icon"></i> Try a Sample Question</h2>
     <div class="sample-question">
         <p class="question-text">What should you do when approaching a red traffic light?</p>
         <div class="question-options">
@@ -216,6 +218,9 @@ function scrollToSection(sectionId) {
         behavior: 'smooth' 
     });
 }
+
+// Initialize Feather icons
+feather.replace();
 </script>
 {% endblock %}
 
