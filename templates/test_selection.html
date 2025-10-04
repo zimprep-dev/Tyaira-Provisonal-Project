@@ -1,0 +1,34 @@
+ {% extends "base.html" %}
+
+{% block title %}Select a Test{% endblock %}
+
+{% block content %}
+<div class="container test-selection-page">
+    <div class="page-header">
+        <h1><i data-feather="list"></i> Select a Test</h1>
+        <p>Choose a category to focus on, or take a full practice test.</p>
+    </div>
+
+    <div class="test-options-container">
+        <a href="{{ url_for('test_interface', category='all') }}" class="test-option-card full-test">
+            <div class="card-icon"><i data-feather="star"></i></div>
+            <div class="card-content">
+                <h3>Full Practice Test</h3>
+                <p>A mix of 25 questions from all categories.</p>
+            </div>
+        </a>
+
+        <h2>Practice by Category</h2>
+        <div class="category-grid">
+            {% for category in categories %}
+            <a href="{{ url_for('test_interface', category=category.name) }}" class="test-option-card category-test">
+                <div class="card-icon"><i data-feather="tag"></i></div>
+                <div class="card-content">
+                    <h4>{{ category.name }}</h4>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

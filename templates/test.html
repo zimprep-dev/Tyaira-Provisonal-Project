@@ -101,7 +101,7 @@ function submitTest() {
     }
     
     // Check if all questions are answered
-    const totalQuestions = {{ questions|length }};
+    const totalQuestions = parseInt('{{ questions|length }}', 10);
     if (Object.keys(answers).length < totalQuestions) {
         alert('Please answer all questions before submitting.');
         return;

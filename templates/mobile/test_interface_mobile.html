@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Driving Test - Mobile</title>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobile-test.css') }}">
+</head>
+<body class="mobile-test-body">
+    <!-- Mobile Test Header -->
+    <div class="mobile-test-header">
+        <button class="mobile-exit-btn" onclick="exitTest()">
+            <i data-feather="x"></i>
+        </button>
+        <div class="mobile-timer">
+            <i data-feather="clock"></i>
+            <span id="mobileTimeRemaining">08:00</span>
+        </div>
+    </div>
+
+    <!-- Progress Indicator -->
+    <div class="mobile-progress-bar">
+        <div class="mobile-progress-fill" id="mobileProgressFill"></div>
+    </div>
+    <div class="mobile-question-counter">
+        Question <span id="mobileCurrentQuestion">1</span> of <span id="mobileTotalQuestions">25</span>
+    </div>
+
+    <!-- Main Test Content -->
+    <div class="mobile-test-container" data-category="{{ category }}">
+        
+        <!-- Question Image (if exists) -->
+        <div class="mobile-image-section" id="mobileImageSection" style="display: none;">
+            <img id="mobileQuestionImage" alt="Question diagram">
+            <button class="mobile-zoom-btn" onclick="openImageModal()">
+                <i data-feather="maximize-2"></i> View Full Size
+            </button>
+        </div>
+
+        <!-- Question Text -->
+        <div class="mobile-question-section">
+            <h2 id="mobileQuestionText">Loading question...</h2>
+        </div>
+
+        <!-- Answer Options -->
+        <div class="mobile-options-section" id="mobileAnswerOptions">
+            <div class="mobile-option" data-option="A">
+                <input type="radio" name="mobileAnswer" value="A" id="mobileOptionA">
+                <label for="mobileOptionA">
+                    <span class="mobile-option-letter">A</span>
+                    <span class="mobile-option-text" id="mobileOptionAText">Option A</span>
+                </label>
+            </div>
+            <div class="mobile-option" data-option="B">
+                <input type="radio" name="mobileAnswer" value="B" id="mobileOptionB">
+                <label for="mobileOptionB">
+                    <span class="mobile-option-letter">B</span>
+                    <span class="mobile-option-text" id="mobileOptionBText">Option B</span>
+                </label>
+            </div>
+            <div class="mobile-option" data-option="C">
+                <input type="radio" name="mobileAnswer" value="C" id="mobileOptionC">
+                <label for="mobileOptionC">
+                    <span class="mobile-option-letter">C</span>
+                    <span class="mobile-option-text" id="mobileOptionCText">Option C</span>
+                </label>
+            </div>
+            <div class="mobile-option" data-option="D" style="display: none;">
+                <input type="radio" name="mobileAnswer" value="D" id="mobileOptionD">
+                <label for="mobileOptionD">
+                    <span class="mobile-option-letter">D</span>
+                    <span class="mobile-option-text" id="mobileOptionDText">Option D</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Footer -->
+    <div class="mobile-nav-footer">
+        <button class="mobile-nav-btn mobile-prev-btn" id="mobilePrevBtn" disabled>
+            <i data-feather="chevron-left"></i>
+            Previous
+        </button>
+        <button class="mobile-nav-btn mobile-next-btn" id="mobileNextBtn">
+            Next
+            <i data-feather="chevron-right"></i>
+        </button>
+        <button class="mobile-nav-btn mobile-finish-btn" id="mobileFinishBtn" style="display: none;">
+            <i data-feather="check-circle"></i>
+            Finish
+        </button>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="mobileImageModal" class="mobile-modal" style="display: none;">
+        <div class="mobile-modal-content">
+            <button class="mobile-modal-close" onclick="closeImageModal()">
+                <i data-feather="x"></i>
+            </button>
+            <img id="mobileModalImage" alt="Question diagram">
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="mobileResultsModal" class="mobile-modal" style="display: none;">
+        <div class="mobile-modal-content mobile-results-content">
+            <h2>Test Complete!</h2>
+            <div class="mobile-score-display">
+                <div class="mobile-score-circle">
+                    <span class="mobile-score-percentage" id="mobileScorePercentage">0%</span>
+                </div>
+                <p class="mobile-score-text">
+                    You scored <strong id="mobileScoreValue">0/0</strong>
+                </p>
+                <p id="mobileResultMessage">Keep practicing!</p>
+            </div>
+            <div class="mobile-results-actions">
+                <button class="mobile-action-btn mobile-primary" id="mobileReviewBtn">
+                    <i data-feather="eye"></i>
+                    Review Test
+                </button>
+                <button class="mobile-action-btn mobile-secondary" onclick="window.location.href='/dashboard'">
+                    <i data-feather="home"></i>
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion Confirmation Modal -->
+    <div id="mobileCompletionModal" class="mobile-modal" style="display: none;">
+        <div class="mobile-modal-content">
+            <h2>Submit Test?</h2>
+            <div class="mobile-completion-stats">
+                <p>Questions Answered: <strong id="mobileAnsweredCount">0</strong></p>
+                <p>Time Used: <strong id="mobileTimeUsed">0:00</strong></p>
+            </div>
+            <p class="mobile-warning">You cannot change your answers after submission.</p>
+            <div class="mobile-completion-actions">
+                <button class="mobile-action-btn mobile-secondary" id="mobileContinueTestBtn">
+                    Continue Test
+                </button>
+                <button class="mobile-action-btn mobile-primary" id="mobileSubmitTestBtn">
+                    Submit Test
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/mobile-test.js') }}"></script>
+    <script>
+        feather.replace();
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            mobileTestInterface.initializeTest();
+        });
+
+        function exitTest() {
+            if (confirm('Are you sure you want to exit the test? Your progress will be lost.')) {
+                window.location.href = '{{ url_for("take_test") }}';
+            }
+        }
+
+        function openImageModal() {
+            const modal = document.getElementById('mobileImageModal');
+            const modalImg = document.getElementById('mobileModalImage');
+            const questionImg = document.getElementById('mobileQuestionImage');
+            
+            modalImg.src = questionImg.src;
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('mobileImageModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    </script>
+</body>
+</html>

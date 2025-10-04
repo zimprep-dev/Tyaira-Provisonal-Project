@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+{% from 'macros/_pagination.html' import render_pagination %}
+
+{% block title %}Question Management - CMS{% endblock %}
+
+{% block content %}
+<div class="cms-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i data-feather="help-circle"></i> Question Management</h1>
+            <p>Create, edit, and manage all test questions for the platform.</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="showQuestionModal()">
+                <i data-feather="plus"></i> Add New Question
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form class="filters-bar" method="GET" action="{{ url_for('admin_questions') }}">
+        <div class="filter-group">
+            <label for="category">Category:</label>
+            <select id="category" name="category" onchange="this.form.submit()">
+                <option value="all">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>{{ category }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="search">Search:</label>
+            <input type="text" id="search" name="search" placeholder="Search questions..." value="{{ search_query or '' }}">
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-sm btn-secondary">Filter</button>
+            <a href="{{ url_for('admin_questions') }}" class="btn btn-sm btn-link">Clear</a>
+        </div>
+    </form>
+
+    <!-- Questions List -->
+    <div class="questions-container" id="questionsList">
+        {% for question in questions %}
+        <div class="question-card" data-question-id="{{ question.id }}" data-category="{{ question.category.name if question.category else 'Unknown' }}">
+            <div class="question-header">
+                <div class="question-meta">
+                    <span class="question-id">Q{{ question.id }}</span>
+                    <span class="question-category">{{ question.category.name if question.category else 'Unknown' }}</span>
+                </div>
+                <div class="question-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="editQuestion('{{ question.id }}')">
+                        <i data-feather="edit-2"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteQuestion('{{ question.id }}', this)">
+                        <i data-feather="trash-2"></i> Delete
+                    </button>
+                </div>
+            </div>
+            <div class="question-body">
+                <div class="question-details">
+                    <div class="question-text">{{ question.question_text }}</div>
+                    <div class="question-options">
+                        {% for option in question.options %}
+                        <div class="option {% if option.is_correct %}correct-answer{% endif %}"><strong>{{ option.option_letter }}:</strong> {{ option.option_text }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if question.image_path %}
+                <div class="question-image-preview">
+                    <img src="{{ url_for('uploaded_file', filename='images/' + question.image_path.split('/')[-1].split('\\')[-1]) }}" alt="Question Image">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No Questions Found</h3>
+            <p>Add some questions to get started.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pagination and pagination.pages > 1 %}
+    <div class="pagination-wrapper">
+        {{ render_pagination(pagination, 'admin_questions', category=selected_category, search=search_query) }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add/Edit Question Modal -->
+<div id="questionModal" class="modal" style="display: none;">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add New Question</h2>
+            <button class="modal-close" onclick="hideQuestionModal()">&times;</button>
+        </div>
+        
+        <form id="questionForm" class="question-form">
+            <input type="hidden" id="questionId" name="questionId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modalCategory">Category:</label>
+                    <input type="text" id="modalCategory" name="category" list="category-list" required placeholder="e.g., Traffic Signs">
+                    <datalist id="category-list">
+                        {% for category in categories %}
+                        <option value="{{ category }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="modalDifficulty">Difficulty:</label>
+                    <select id="modalDifficulty" name="difficulty">
+                        <option value="basic">Basic</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="modalQuestionText">Question Text:</label>
+                <textarea id="modalQuestionText" name="text" rows="3" placeholder="Enter your question..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Question Image (Optional):</label>
+                <input type="hidden" id="modalImagePath" name="imagePath">
+                <div class="image-selector-preview" id="imageSelectorPreview">
+                    <div class="selected-image-display" id="selectedImageDisplay">
+                        <div class="no-image-placeholder">
+                            <i data-feather="image"></i>
+                            <span>No image selected</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openImageSelectorModal()">
+                        <i data-feather="folder"></i> Browse Images
+                    </button>
+                </div>
+                <small>Select an existing image. To add a new one, go to the <a href="{{ url_for('admin_files') }}" target="_blank">File Management</a> page.</small>
+            </div>
+            
+            <div class="options-section">
+                <h3>Answer Options</h3>
+                <div class="form-group">
+                    <label for="modalOptionA">Option A:</label>
+                    <input type="text" id="modalOptionA" name="optionA" placeholder="First answer option..." required>
+                </div>
+                <div class="form-group">
+                    <label for="modalOptionB">Option B:</label>
+                    <input type="text" id="modalOptionB" name="optionB" placeholder="Second answer option..." required>
+                </div>
+                <div class="form-group">
+                    <label for="modalOptionC">Option C:</label>
+                    <input type="text" id="modalOptionC" name="optionC" placeholder="Third answer option..." required>
+                </div>
+                <div class="form-group">
+                    <label for="modalOptionD">Option D (Optional):</label>
+                    <input type="text" id="modalOptionD" name="optionD" placeholder="Fourth answer option...">
+                </div>
+                <div class="form-group">
+                    <label for="modalCorrectAnswer">Correct Answer:</label>
+                    <select id="modalCorrectAnswer" name="correctAnswer" required>
+                        <option value="">Select correct answer</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D" id="optionDChoice" style="display: none;">D</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideQuestionModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i data-feather="save"></i> Save Question</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Image Selector Modal -->
+<div id="imageSelectorModal" class="modal" style="display: none;">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h2><i data-feather="image"></i> Select Question Image</h2>
+            <button class="modal-close" onclick="closeImageSelectorModal()">&times;</button>
+        </div>
+        
+        <div class="image-selector-content">
+            <div class="image-selector-search">
+                <input type="text" id="imageSearchInput" placeholder="Search images..." onkeyup="filterImageGallery()">
+            </div>
+            
+            <div class="image-gallery" id="imageGallery">
+                <div class="image-gallery-item no-image-option" onclick="selectImage('', 'No Image')">
+                    <div class="gallery-image-wrapper">
+                        <div class="no-image-icon">
+                            <i data-feather="x-circle"></i>
+                        </div>
+                    </div>
+                    <div class="gallery-image-name">No Image</div>
+                    <div class="gallery-image-check"><i data-feather="check-circle"></i></div>
+                </div>
+                <!-- Images will be populated by JavaScript -->
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div class="image-pagination" id="imagePagination">
+                <button type="button" class="btn btn-sm btn-secondary" id="prevPageBtn" onclick="changePage(-1)">
+                    <i data-feather="chevron-left"></i> Previous
+                </button>
+                <div class="pagination-info">
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <span class="image-count" id="imageCount">0 images</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary" id="nextPageBtn" onclick="changePage(1)">
+                    Next <i data-feather="chevron-right"></i>
+                </button>
+            </div>
+            
+            <div class="image-selector-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeImageSelectorModal()">Cancel</button>
+                <a href="{{ url_for('admin_files') }}" target="_blank" class="btn btn-outline-primary">
+                    <i data-feather="upload"></i> Upload New Image
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let currentEditingId = null;
+    let availableImages = [];
+    let currentPage = 1;
+    let imagesPerPage = 8;
+    let filteredImages = [];
+
+    // --- Modal & Form Handling ---
+    window.showQuestionModal = () => {
+        currentEditingId = null;
+        document.getElementById('questionForm').reset();
+        const modalTitle = document.getElementById('modalTitle');
+        if (modalTitle) modalTitle.innerHTML = '<i data-feather="plus"></i> Add New Question';
+        
+        // Hide Option D in correct answer dropdown by default
+        const optionDChoice = document.getElementById('optionDChoice');
+        if (optionDChoice) optionDChoice.style.display = 'none';
+        
+        document.getElementById('questionModal').style.display = 'flex';
+        if (window.feather) feather.replace();
+        populateImageSelector();
+    };
+
+    window.hideQuestionModal = () => {
+        document.getElementById('questionModal').style.display = 'none';
+    };
+
+    // --- API Calls ---
+    window.editQuestion = async (questionId) => {
+        try {
+            const response = await fetch(`/get_question/${questionId}`);
+            if (!response.ok) throw new Error('Failed to fetch question data.');
+            const data = await response.json();
+
+            currentEditingId = questionId;
+            const modalTitle = document.getElementById('modalTitle');
+            if (modalTitle) modalTitle.innerHTML = '<i data-feather="edit-2"></i> Edit Question';
+            
+            document.getElementById('questionId').value = data.id;
+            document.getElementById('modalCategory').value = data.category;
+            document.getElementById('modalDifficulty').value = data.difficulty;
+            document.getElementById('modalQuestionText').value = data.text;
+            document.getElementById('modalOptionA').value = data.optionA;
+            document.getElementById('modalOptionB').value = data.optionB;
+            document.getElementById('modalOptionC').value = data.optionC;
+            document.getElementById('modalOptionD').value = data.optionD;
+            document.getElementById('modalCorrectAnswer').value = data.correctAnswer;
+            
+            // Show/hide Option D in correct answer dropdown
+            const optionDChoice = document.getElementById('optionDChoice');
+            if (optionDChoice) {
+                if (data.optionD && data.optionD.trim()) {
+                    optionDChoice.style.display = 'block';
+                } else {
+                    optionDChoice.style.display = 'none';
+                }
+            }
+            
+            await populateImageSelector(data.imagePath);
+
+            document.getElementById('questionModal').style.display = 'flex';
+            if (window.feather) feather.replace();
+        } catch (error) {
+            console.error('Error loading question:', error);
+            alert('Failed to load question data.');
+        }
+    };
+
+    window.deleteQuestion = async (questionId, element) => {
+        if (!confirm('Are you sure you want to delete this question? This action cannot be undone.')) return;
+
+        try {
+            const response = await fetch(`/delete_question/${questionId}`, { method: 'DELETE' });
+            const data = await response.json();
+
+            if (data.success) {
+                const card = element.closest('.question-card');
+                card.style.transition = 'opacity 0.5s ease';
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    card.remove();
+                }, 500);
+            } else {
+                throw new Error(data.error || 'Unknown error');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert(`Delete failed: ${error.message}`);
+        }
+    };
+
+    document.getElementById('questionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const url = currentEditingId ? `/update_question/${currentEditingId}` : '/add_question';
+        const method = currentEditingId ? 'PUT' : 'POST';
+
+        const formData = {
+            category: document.getElementById('modalCategory').value,
+            difficulty: document.getElementById('modalDifficulty').value,
+            text: document.getElementById('modalQuestionText').value,
+            optionA: document.getElementById('modalOptionA').value,
+            optionB: document.getElementById('modalOptionB').value,
+            optionC: document.getElementById('modalOptionC').value,
+            optionD: document.getElementById('modalOptionD').value,
+            correctAnswer: document.getElementById('modalCorrectAnswer').value,
+            imagePath: document.getElementById('modalImagePath').value
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Save operation failed.');
+
+            hideQuestionModal();
+            
+            if (currentEditingId) {
+                // Update existing card
+                const updatedCard = createQuestionCard(data.question);
+                const oldCard = document.querySelector(`.question-card[data-question-id="${currentEditingId}"]`);
+                oldCard.outerHTML = updatedCard;
+            } else {
+                // Add new card to the top
+                const newCard = createQuestionCard(data.question);
+                document.getElementById('questionsList').insertAdjacentHTML('afterbegin', newCard);
+            }
+            if (window.feather) feather.replace();
+
+        } catch (error) {
+            console.error('Save error:', error);
+            alert(`Save failed: ${error.message}`);
+        }
+    });
+
+    // --- UI & Helpers ---
+    async function fetchAvailableImages() {
+        try {
+            const response = await fetch('/api/images');
+            if (!response.ok) throw new Error('Failed to fetch image list.');
+            const imageFiles = await response.json();
+            availableImages = imageFiles;
+        } catch (error) {
+            console.error("Could not fetch image list:", error);
+            availableImages = []; // Ensure it's an empty array on failure
+        }
+    }
+
+    async function populateImageSelector(selectedPath = '') {
+        await fetchAvailableImages();
+        
+        // Update the hidden input
+        document.getElementById('modalImagePath').value = selectedPath || '';
+        
+        // Update the preview display
+        updateSelectedImageDisplay(selectedPath);
+        
+        // Populate the gallery modal
+        populateImageGallery(selectedPath);
+    }
+    
+    function updateSelectedImageDisplay(imagePath) {
+        const display = document.getElementById('selectedImageDisplay');
+        if (!imagePath) {
+            display.innerHTML = `
+                <div class="no-image-placeholder">
+                    <i data-feather="image"></i>
+                    <span>No image selected</span>
+                </div>
+            `;
+        } else {
+            const imageUrl = `{{ url_for('uploaded_file', filename='images/') }}${imagePath.split('/').pop().split('\\').pop()}`;
+            const imageName = imagePath.split('/').pop().split('\\').pop();
+            display.innerHTML = `
+                <div class="selected-image-preview">
+                    <img src="${imageUrl}" alt="${imageName}">
+                    <div class="selected-image-info">
+                        <span class="selected-image-name">${imageName}</span>
+                        <button type="button" class="btn-remove-image" onclick="removeSelectedImage(event)">
+                            <i data-feather="x"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        if (window.feather) feather.replace();
+    }
+    
+    function populateImageGallery(selectedPath = '') {
+        // Reset to first page when repopulating
+        currentPage = 1;
+        filteredImages = [...availableImages];
+        renderGalleryPage(selectedPath);
+    }
+    
+    function renderGalleryPage(selectedPath = '') {
+        const gallery = document.getElementById('imageGallery');
+        const noImageOption = gallery.querySelector('.no-image-option');
+        
+        // Clear gallery but keep "No Image" option
+        gallery.innerHTML = '';
+        gallery.appendChild(noImageOption);
+        
+        // Update "No Image" selection state
+        if (!selectedPath) {
+            noImageOption.classList.add('selected');
+        } else {
+            noImageOption.classList.remove('selected');
+        }
+        
+        // Calculate pagination
+        const totalPages = Math.ceil(filteredImages.length / imagesPerPage);
+        const startIndex = (currentPage - 1) * imagesPerPage;
+        const endIndex = startIndex + imagesPerPage;
+        const imagesToShow = filteredImages.slice(startIndex, endIndex);
+        
+        // Render images for current page
+        imagesToShow.forEach(img => {
+            const imageUrl = `{{ url_for('uploaded_file', filename='images/') }}${img.path.split('/').pop().split('\\').pop()}`;
+            const isSelected = img.path === selectedPath;
+            
+            const item = document.createElement('div');
+            item.className = `image-gallery-item ${isSelected ? 'selected' : ''}`;
+            item.setAttribute('data-path', img.path);
+            item.setAttribute('data-name', img.name);
+            item.onclick = () => selectImage(img.path, img.name);
+            
+            item.innerHTML = `
+                <div class="gallery-image-wrapper">
+                    <img src="${imageUrl}" alt="${img.name}" loading="lazy">
+                </div>
+                <div class="gallery-image-name">${img.name}</div>
+                <div class="gallery-image-check"><i data-feather="check-circle"></i></div>
+            `;
+            
+            gallery.appendChild(item);
+        });
+        
+        // Update pagination controls
+        updatePaginationControls(totalPages);
+        
+        if (window.feather) feather.replace();
+    }
+    
+    function updatePaginationControls(totalPages) {
+        const pageInfo = document.getElementById('pageInfo');
+        const imageCount = document.getElementById('imageCount');
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        
+        // Update page info
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+        imageCount.textContent = `${filteredImages.length} image${filteredImages.length !== 1 ? 's' : ''}`;
+        
+        // Enable/disable buttons
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage >= totalPages || totalPages === 0;
+        
+        // Show/hide pagination if only one page
+        const paginationDiv = document.getElementById('imagePagination');
+        if (totalPages <= 1) {
+            paginationDiv.style.display = 'none';
+        } else {
+            paginationDiv.style.display = 'flex';
+        }
+    }
+    
+    window.changePage = (direction) => {
+        const totalPages = Math.ceil(filteredImages.length / imagesPerPage);
+        const newPage = currentPage + direction;
+        
+        if (newPage >= 1 && newPage <= totalPages) {
+            currentPage = newPage;
+            const currentSelectedPath = document.getElementById('modalImagePath').value;
+            renderGalleryPage(currentSelectedPath);
+            
+            // Scroll gallery to top
+            document.getElementById('imageGallery').scrollTop = 0;
+        }
+    };
+    
+    window.openImageSelectorModal = () => {
+        const currentPath = document.getElementById('modalImagePath').value;
+        populateImageGallery(currentPath);
+        document.getElementById('imageSelectorModal').style.display = 'flex';
+        if (window.feather) feather.replace();
+    };
+    
+    window.closeImageSelectorModal = () => {
+        document.getElementById('imageSelectorModal').style.display = 'none';
+    };
+    
+    window.selectImage = (path, name) => {
+        document.getElementById('modalImagePath').value = path;
+        updateSelectedImageDisplay(path);
+        closeImageSelectorModal();
+    };
+    
+    window.removeSelectedImage = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        document.getElementById('modalImagePath').value = '';
+        updateSelectedImageDisplay('');
+    };
+    
+    window.filterImageGallery = () => {
+        const searchTerm = document.getElementById('imageSearchInput').value.toLowerCase();
+        
+        // Filter images based on search term
+        if (searchTerm) {
+            filteredImages = availableImages.filter(img => 
+                img.name.toLowerCase().includes(searchTerm)
+            );
+        } else {
+            filteredImages = [...availableImages];
+        }
+        
+        // Reset to first page and re-render
+        currentPage = 1;
+        const currentSelectedPath = document.getElementById('modalImagePath').value;
+        renderGalleryPage(currentSelectedPath);
+    };
+
+
+
+    function createQuestionCard(q) {
+        const imageUrl = q.image_path ? `{{ url_for('uploaded_file', filename='images/') }}${q.image_path.split('/').pop().split('\\').pop()}` : '';
+        return `
+        <div class="question-card" data-question-id="${q.id}" data-category="${q.category}">
+            <div class="question-header">
+                <div class="question-meta">
+                    <span class="question-id">Q${q.id}</span>
+                    <span class="question-category">${q.category}</span>
+                </div>
+                <div class="question-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="editQuestion('${q.id}')"><i data-feather="edit-2"></i> Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteQuestion('${q.id}', this)"><i data-feather="trash-2"></i> Delete</button>
+                </div>
+            </div>
+            <div class="question-body">
+                <div class="question-details">
+                    <div class="question-text">${q.text}</div>
+                    <div class="question-options">
+                        <div class="option ${q.correctAnswer === 'A' ? 'correct-answer' : ''}"><strong>A:</strong> ${q.optionA}</div>
+                        <div class="option ${q.correctAnswer === 'B' ? 'correct-answer' : ''}"><strong>B:</strong> ${q.optionB}</div>
+                        <div class="option ${q.correctAnswer === 'C' ? 'correct-answer' : ''}"><strong>C:</strong> ${q.optionC}</div>
+                        ${q.optionD ? `<div class="option ${q.correctAnswer === 'D' ? 'correct-answer' : ''}"><strong>D:</strong> ${q.optionD}</div>` : ''}
+                    </div>
+                </div>
+                ${imageUrl ? `<div class="question-image-preview"><img src="${imageUrl}" alt="Question Image"></div>` : ''}
+            </div>
+        </div>`;
+    }
+
+    // Show/hide Option D in correct answer dropdown based on Option D content
+    document.getElementById('modalOptionD').addEventListener('input', function() {
+        const optionDChoice = document.getElementById('optionDChoice');
+        const correctAnswerSelect = document.getElementById('modalCorrectAnswer');
+        
+        if (this.value.trim()) {
+            // Show option D in dropdown if there's content
+            optionDChoice.style.display = 'block';
+        } else {
+            // Hide option D and reset selection if it was D
+            optionDChoice.style.display = 'none';
+            if (correctAnswerSelect.value === 'D') {
+                correctAnswerSelect.value = '';
+            }
+        }
+    });
+
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === "Escape") hideQuestionModal();
+    });
+});
+</script>
+{% endblock %}

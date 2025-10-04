@@ -3,8 +3,6 @@
 {% block title %}Home - Driver Testing Platform{% endblock %}
 
 {% block content %}
-<!-- Feather Icons -->
-<script src="https://unpkg.com/feather-icons"></script>
 <div class="hero" id="heroSection">
     <h1><i data-feather="truck" class="hero-icon"></i> Zimbabwe Provisional Driver Testing Platform</h1>
     <p class="hero-subtitle">Practice and prepare for your computerized provisional driver testing exam</p>
@@ -220,7 +218,7 @@ function scrollToSection(sectionId) {
 }
 
 // Initialize Feather icons
-feather.replace();
+if (window.feather) feather.replace();
 </script>
 {% endblock %}
 

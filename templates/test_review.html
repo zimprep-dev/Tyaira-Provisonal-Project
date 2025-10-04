@@ -1,0 +1,784 @@
+{% extends "base.html" %}
+
+{% block title %}Test Review - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="test-review-interface">
+    <!-- Optimized Review Header (like test page) -->
+    <div class="review-header-bar">
+        <div class="review-test-info">
+            <i data-feather="book-open"></i>
+            <span class="review-category">{{ test_result.answers[0].question.category.name if test_result.answers and test_result.answers[0].question.category else 'General Test' }}</span>
+        </div>
+        <div class="review-question-indicator">
+            <span id="currentReviewNum">Question 1</span> of {{ test_result.total_questions }}
+        </div>
+        <div class="review-score-display">
+            <span class="review-score-label">Score:</span>
+            <span class="review-score-value">{{ test_result.score }}/{{ test_result.total_questions }}</span>
+            <span class="review-percentage">{{ ((test_result.score / test_result.total_questions) * 100) | round(1) }}%</span>
+        </div>
+        <div class="review-actions-header">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+                <i data-feather="arrow-left"></i> Dashboard
+            </a>
+            <a href="{{ url_for('take_test') }}" class="btn btn-primary btn-sm">
+                <i data-feather="refresh-cw"></i> Retake Test
+            </a>
+        </div>
+    </div>
+
+    <div class="review-main-layout">
+        <!-- Question Display Area -->
+        <div class="review-content-area">
+            {% set all_answers = test_result.answers %}
+            {% for answer in all_answers %}
+            <div class="review-question-card" id="question-{{ loop.index }}" data-question-num="{{ loop.index }}" style="{% if loop.index != 1 %}display: none;{% endif %}">
+                <div class="review-question-body">
+                    <!-- Two-column layout like test page -->
+                    <div class="review-content-layout {% if not answer.question.image_path %}no-image{% endif %}">
+                        {% if answer.question.image_path %}
+                        <div class="question-image-section">
+                            <div class="image-container">
+                                <img src="{{ url_for('uploaded_file', filename='images/' + answer.question.image_path.split('/')[-1].split('\\')[-1]) }}" alt="Question Image" id="reviewImage-{{ loop.index }}">
+                            </div>
+                            <div class="image-controls">
+                                <button type="button" class="btn-image-control" onclick="zoomReviewImage({{ loop.index }}, 0.1)" title="Zoom In">
+                                    <i data-feather="plus"></i>
+                                </button>
+                                <button type="button" class="btn-image-control" onclick="zoomReviewImage({{ loop.index }}, -0.1)" title="Zoom Out">
+                                    <i data-feather="minus"></i>
+                                </button>
+                                <button type="button" class="btn-image-control" onclick="resetReviewImage({{ loop.index }})" title="Reset Zoom">
+                                    <i data-feather="maximize-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="question-text-and-options">
+                            <div class="question-text-section">
+                                <h3>{{ answer.question.question_text }}</h3>
+                            </div>
+
+                            <div class="review-options-section">
+                        {% for option in answer.question.options %}
+                        {% set is_user_answer = (answer.user_answer == option.option_letter) %}
+                        {% set is_correct_answer = option.is_correct %}
+                        <div class="review-option-item {% if is_correct_answer %}correct-option{% endif %} {% if is_user_answer and not is_correct_answer %}wrong-option{% endif %} {% if is_user_answer %}user-selected{% endif %}">
+                            <div class="option-marker">{{ option.option_letter }}</div>
+                            <div class="option-text">{{ option.option_text }}</div>
+                            {% if is_correct_answer %}
+                                <div class="option-indicator correct-indicator">
+                                    <i data-feather="check-circle"></i> Correct
+                                </div>
+                            {% elif is_user_answer %}
+                                <div class="option-indicator wrong-indicator">
+                                    <i data-feather="x-circle"></i> Your Answer
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                            </div>
+
+                            {% if not answer.is_correct %}
+                            <div class="explanation-section">
+                        <div class="explanation-header">
+                            <i data-feather="info"></i> Explanation
+                        </div>
+                        <div class="explanation-content">
+                            {% set correct_option = answer.question.get_correct_option() %}
+                            The correct answer is <strong>{{ correct_option.option_letter }}: {{ correct_option.option_text }}</strong>.
+                            {% if not answer.user_answer %}
+                                You did not answer this question.
+                            {% else %}
+                                {% set user_option = answer.question.get_option_by_letter(answer.user_answer) %}
+                                You selected <strong>{{ answer.user_answer }}: {{ user_option.option_text }}</strong>.
+                            {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-navigation-footer">
+                    <button class="btn btn-secondary" id="prevReviewBtn" onclick="navigateReview(-1)" {% if loop.index == 1 %}disabled{% endif %}>
+                        <i data-feather="arrow-left"></i> Previous
+                    </button>
+                    <div class="review-progress">
+                        Question {{ loop.index }} of {{ test_result.total_questions }}
+                    </div>
+                    <button class="btn btn-secondary" id="nextReviewBtn" onclick="navigateReview(1)" {% if loop.index == test_result.total_questions %}disabled{% endif %}>
+                        Next <i data-feather="arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Question Navigator Sidebar -->
+        <div class="review-navigator">
+            <h3>Question Navigator</h3>
+            <div class="review-question-grid" id="reviewQuestionGrid">
+                {% for answer in all_answers %}
+                <div class="review-grid-item {% if answer.is_correct %}correct{% else %}wrong{% endif %} {% if loop.index == 1 %}current{% endif %}" 
+                     data-question="{{ loop.index }}" 
+                     onclick="jumpToQuestion({{ loop.index }})">
+                    {{ loop.index }}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="review-navigator-legend">
+                <div class="legend-item">
+                    <div class="legend-color correct"></div>
+                    <span>Correct</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color wrong"></div>
+                    <span>Wrong</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color current"></div>
+                    <span>Current</span>
+                </div>
+            </div>
+            
+            <div class="review-summary-stats">
+                <div class="stat-item correct-stat">
+                    <i data-feather="check-circle"></i>
+                    <div class="stat-info">
+                        <div class="stat-number">{{ test_result.score }}</div>
+                        <div class="stat-label">Correct</div>
+                    </div>
+                </div>
+                <div class="stat-item wrong-stat">
+                    <i data-feather="x-circle"></i>
+                    <div class="stat-info">
+                        <div class="stat-number">{{ test_result.total_questions - test_result.score }}</div>
+                        <div class="stat-label">Wrong</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentReviewQuestion = 1;
+const totalReviewQuestions = {{ test_result.total_questions }};
+const imageScales = {};
+
+function navigateReview(direction) {
+    const newQuestion = currentReviewQuestion + direction;
+    if (newQuestion >= 1 && newQuestion <= totalReviewQuestions) {
+        jumpToQuestion(newQuestion);
+    }
+}
+
+function jumpToQuestion(questionNum) {
+    // Hide current question
+    document.querySelector(`#question-${currentReviewQuestion}`).style.display = 'none';
+    
+    // Remove current class from grid
+    document.querySelectorAll('.review-grid-item').forEach(item => {
+        item.classList.remove('current');
+    });
+    
+    // Show new question
+    document.querySelector(`#question-${questionNum}`).style.display = 'block';
+    
+    // Add current class to grid item
+    document.querySelector(`.review-grid-item[data-question="${questionNum}"]`).classList.add('current');
+    
+    // Update current question number
+    currentReviewQuestion = questionNum;
+    
+    // Update header question indicator
+    document.getElementById('currentReviewNum').textContent = `Question ${questionNum}`;
+    
+    // Update button states
+    document.getElementById('prevReviewBtn').disabled = (questionNum === 1);
+    document.getElementById('nextReviewBtn').disabled = (questionNum === totalReviewQuestions);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Replace feather icons
+    if (window.feather) feather.replace();
+}
+
+// Image zoom functions
+function zoomReviewImage(questionNum, delta) {
+    const img = document.getElementById(`reviewImage-${questionNum}`);
+    if (!img) return;
+    
+    if (!imageScales[questionNum]) {
+        imageScales[questionNum] = 1;
+    }
+    
+    imageScales[questionNum] = Math.max(0.5, Math.min(3, imageScales[questionNum] + delta));
+    img.style.transform = `scale(${imageScales[questionNum]})`;
+}
+
+function resetReviewImage(questionNum) {
+    const img = document.getElementById(`reviewImage-${questionNum}`);
+    if (!img) return;
+    
+    imageScales[questionNum] = 1;
+    img.style.transform = 'scale(1)';
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigateReview(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); navigateReview(1); }
+});
+</script>
+{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+/* ========================================
+   TEST REVIEW INTERFACE STYLES
+   ======================================== */
+
+.test-review-interface {
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+/* Optimized Review Header (like test page) */
+.review-header-bar {
+    background: white;
+    padding: 0.75rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-bottom: 2px solid #28a745;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+    gap: 1.5rem;
+}
+
+.review-test-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.review-test-info i {
+    width: 20px;
+    height: 20px;
+}
+
+.review-category {
+    color: #495057;
+}
+
+.review-question-indicator {
+    font-weight: 600;
+    color: #495057;
+    font-size: 1rem;
+}
+
+.review-score-display {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.review-score-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.review-score-value {
+    font-weight: 700;
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.review-percentage {
+    background: #28a745;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.review-actions-header {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Main Layout */
+.review-main-layout {
+    display: flex;
+    gap: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: calc(100vh - 120px);
+}
+
+.review-content-area {
+    flex: 1;
+    padding: 2rem;
+    background: #f8f9fa;
+}
+
+/* Question Card */
+.review-question-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.review-question-body {
+    padding: 1.5rem;
+    min-height: 400px;
+}
+
+/* Two-column layout like test page */
+.review-content-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+    align-items: start;
+    width: 100%;
+}
+
+/* Single column when no image */
+.review-content-layout.no-image {
+    grid-template-columns: 1fr;
+    display: block;
+}
+
+.question-text-and-options {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.question-text-section {
+    width: 100%;
+    background: #f0f0f0;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.question-text-section h3 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #333 !important;
+    margin-bottom: 1.25rem;
+}
+
+.question-image-section {
+    flex-shrink: 0;
+}
+
+.question-image-section .image-container {
+    width: 100%;
+    height: 350px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.question-image-section img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.image-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.btn-image-control {
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #495057;
+    transition: all 0.2s;
+}
+
+.btn-image-control:hover {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.btn-image-control i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Review Options */
+.review-options-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    width: 100%;
+}
+
+.review-option-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.review-option-item .option-marker {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #495057;
+    flex-shrink: 0;
+    margin-right: 1rem;
+}
+
+.review-option-item .option-text {
+    flex: 1;
+    font-size: 1.05rem;
+    color: #333;
+}
+
+.option-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    margin-left: 1rem;
+}
+
+.correct-indicator {
+    background: #d4edda;
+    color: #155724;
+}
+
+.wrong-indicator {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Correct Option Styling */
+.review-option-item.correct-option {
+    background: #f0fff4;
+    border-color: #38a169;
+}
+
+.review-option-item.correct-option .option-marker {
+    background: #38a169;
+    border-color: #38a169;
+    color: white;
+}
+
+/* Wrong Option Styling */
+.review-option-item.wrong-option {
+    background: #fff5f5;
+    border-color: #e53e3e;
+}
+
+.review-option-item.wrong-option .option-marker {
+    background: #e53e3e;
+    border-color: #e53e3e;
+    color: white;
+}
+
+/* Explanation Section */
+.explanation-section {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    background: #e7f3ff;
+    border-left: 4px solid #0066cc;
+    border-radius: 8px;
+}
+
+.explanation-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #0066cc;
+    margin-bottom: 0.75rem;
+    font-size: 1.05rem;
+}
+
+.explanation-content {
+    color: #495057;
+    line-height: 1.6;
+}
+
+/* Navigation Footer */
+.review-navigation-footer {
+    padding: 1.25rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.review-progress {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Question Navigator Sidebar */
+.review-navigator {
+    width: 320px;
+    background: white;
+    border-left: 1px solid #e9ecef;
+    padding: 1.5rem;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.review-navigator h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1.25rem;
+}
+
+.review-question-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.review-grid-item {
+    aspect-ratio: 1;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    color: #495057;
+}
+
+.review-grid-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.review-grid-item.correct {
+    background: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.review-grid-item.wrong {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.review-grid-item.current {
+    border-color: #007bff;
+    border-width: 3px;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Navigator Legend */
+.review-navigator-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.legend-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 2px solid;
+}
+
+.legend-color.correct {
+    background: #d4edda;
+    border-color: #28a745;
+}
+
+.legend-color.wrong {
+    background: #f8d7da;
+    border-color: #dc3545;
+}
+
+.legend-color.current {
+    background: white;
+    border-color: #007bff;
+    border-width: 3px;
+}
+
+/* Review Summary Stats */
+.review-summary-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.stat-item i {
+    width: 32px;
+    height: 32px;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.correct-stat {
+    background: #d4edda;
+    color: #155724;
+}
+
+.wrong-stat {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .review-main-layout {
+        flex-direction: column;
+    }
+    
+    .review-navigator {
+        width: 100%;
+        height: auto;
+        position: static;
+        border-left: none;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .review-question-grid {
+        grid-template-columns: repeat(8, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .review-header-bar {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .review-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .review-content-area {
+        padding: 1rem;
+    }
+    
+    .review-question-body {
+        padding: 1.5rem;
+    }
+    
+    .review-question-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .review-navigation-footer {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .question-image-section .image-container {
+        min-height: 300px;
+        max-height: 400px;
+    }
+    
+    .image-controls {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .review-question-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+</style>
+{% endblock %}

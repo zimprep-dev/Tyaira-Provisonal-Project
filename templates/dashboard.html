@@ -3,8 +3,6 @@
 {% block title %}Dashboard - Driver Testing Platform{% endblock %}
 
 {% block content %}
-<!-- Feather Icons -->
-<script src="https://unpkg.com/feather-icons"></script>
 <div class="dashboard">
     <div class="dashboard-header">
         <h1><i data-feather="user" class="dashboard-icon"></i> Welcome, {{ user.username }}!</h1>
@@ -20,7 +18,7 @@
     <div class="dashboard-stats">
         <div class="stat-card">
             <h3><i data-feather="check-circle" class="stat-icon"></i> Tests Taken</h3>
-            <div class="stat-number">{{ user.tests|length }}</div>
+            <div class="stat-number">{{ user.tests_taken|length }}</div>
         </div>
         <div class="stat-card">
             <h3><i data-feather="download" class="stat-icon"></i> Downloads Used</h3>
@@ -44,7 +42,7 @@
         <div class="action-card">
             <h3><i data-feather="download-cloud" class="action-icon"></i> Download Resources</h3>
             <p>Get study materials and practice questions</p>
-            <a href="{{ url_for('download_pdf') }}" class="btn btn-secondary">Download PDF</a>
+            <button id="downloadResourcesBtn" class="btn btn-secondary">Download PDF</button>
         </div>
         
         {% if not user.is_subscriber %}
@@ -75,8 +73,92 @@
     {% endif %}
 </div>
 
+<!-- Download Modal -->
+<div id="downloadModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Download Resources</h2>
+            <button id="closeModalBtn" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Select a file to download. Free users are limited to 3 downloads.</p>
+            <div id="pdf-list" class="file-list">
+                <!-- PDF links will be inserted here by JavaScript -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="closeModalFooterBtn" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+</div>
+
 <script>
-// Initialize Feather icons
-feather.replace();
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace(); // Initialize Feather icons
+
+    const downloadBtn = document.getElementById('downloadResourcesBtn');
+    const modal = document.getElementById('downloadModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const closeModalFooterBtn = document.getElementById('closeModalFooterBtn');
+    const pdfListContainer = document.getElementById('pdf-list');
+
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', async (e) => {
+            e.preventDefault(); // Prevent default link behavior
+
+            // Fetch PDF list from the API
+            try {
+                const response = await fetch('/api/pdfs');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch PDF list.');
+                }
+                const pdfs = await response.json();
+
+                // Clear previous list
+                pdfListContainer.innerHTML = '';
+
+                if (pdfs.length > 0) {
+                    const list = document.createElement('ul');
+                    list.className = 'download-list';
+                    pdfs.forEach(pdf => {
+                        const item = document.createElement('li');
+                        const link = document.createElement('a');
+                        link.href = pdf.url;
+                        link.textContent = pdf.name;
+                        link.classList.add('download-link');
+                        item.appendChild(link);
+                        list.appendChild(item);
+                    });
+                    pdfListContainer.appendChild(list);
+                } else {
+                    pdfListContainer.innerHTML = '<p>No PDF resources are available at the moment.</p>';
+                }
+
+                // Show the modal
+                modal.style.display = 'flex';
+                document.body.classList.add('modal-open');
+
+            } catch (error) {
+                console.error('Error fetching PDFs:', error);
+                alert('Could not load PDF resources. Please try again later.');
+            }
+        });
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+
+    if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+    if(closeModalFooterBtn) closeModalFooterBtn.addEventListener('click', closeModal);
+
+    // Close modal if clicking outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target == modal) {
+            closeModal();
+        }
+    });
+});
 </script>
 {% endblock %}

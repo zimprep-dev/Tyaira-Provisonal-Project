@@ -5,7 +5,7 @@
 {% block content %}
 <div class="profile-container">
     <div class="profile-header">
-        <h1>👤 User Profile</h1>
+        <h1><i data-feather="user"></i> User Profile</h1>
         <p>Manage your account and view your progress</p>
     </div>
 
@@ -27,7 +27,9 @@
                     <span class="account-type">
                         {% if user.is_subscriber %}
                             <span class="badge premium">Premium Subscriber</span>
-                            <small>Since {{ user.subscription_date.strftime('%Y-%m-%d') }}</small>
+                            {% if user.subscription_date %}
+                                <small>Since {{ user.subscription_date.strftime('%Y-%m-%d') }}</small>
+                            {% endif %}
                         {% else %}
                             <span class="badge free">Free Tier</span>
                         {% endif %}
@@ -35,7 +37,13 @@
                 </div>
                 <div class="info-group">
                     <label>Member Since</label>
-                    <span>{{ user.tests_taken[0].test_date.strftime('%Y-%m-%d') if user.tests_taken else 'N/A' }}</span>
+                    <span>
+                        {% if user.tests_taken and user.tests_taken[0].test_date %}
+                            {{ user.tests_taken[0].test_date.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </span>
                 </div>
             </div>
             
@@ -53,21 +61,21 @@
             <h2>Your Statistics</h2>
             <div class="stats-grid">
                 <div class="stat-item">
-                    <div class="stat-icon">📊</div>
+                    <div class="stat-icon"><i data-feather="bar-chart-2"></i></div>
                     <div class="stat-content">
                         <div class="stat-number">{{ user.tests_taken|length }}</div>
                         <div class="stat-label">Tests Taken</div>
                     </div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-icon">📖</div>
+                    <div class="stat-icon"><i data-feather="book"></i></div>
                     <div class="stat-content">
                         <div class="stat-number">{{ user.downloads_count }}/3</div>
                         <div class="stat-label">Downloads Used</div>
                     </div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-icon">🎯</div>
+                    <div class="stat-icon"><i data-feather="target"></i></div>
                     <div class="stat-content">
                         <div class="stat-number">
                             {% if user.tests_taken %}
@@ -80,7 +88,7 @@
                     </div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-icon"><i data-feather="clock"></i></div>
                     <div class="stat-content">
                         <div class="stat-number">
                             {% if user.tests_taken %}
@@ -108,9 +116,9 @@
                 
                 <div class="history-list">
                     {% for test in user.tests_taken %}
-                    <div class="history-item" data-score="{{ test.score }}" data-date="{{ test.test_date.isoformat() }}">
+                    <div class="history-item" data-score="{{ test.score }}" data-date="{{ test.test_date.isoformat() if test.test_date else '' }}">
                         <div class="test-info">
-                            <div class="test-date">{{ test.test_date.strftime('%Y-%m-%d %H:%M') }}</div>
+                            <div class="test-date">{{ test.test_date.strftime('%Y-%m-%d %H:%M') if test.test_date else 'N/A' }}</div>
                             <div class="test-score">
                                 <span class="score">{{ test.score }}/{{ test.total_questions }}</span>
                                 <span class="percentage">({{ "%.1f"|format(test.score / test.total_questions * 100) }}%)</span>
@@ -153,11 +161,22 @@
     </div>
 </div>
 
+{% if user.tests_taken|length > 1 %}
+    {% set ns = namespace(dates=[]) %}
+    {% for t in user.tests_taken %}
+        {% set _ = ns.dates.append(t.test_date.strftime('%m-%d') if t.test_date else '') %}
+    {% endfor %}
+    <script id="chart-data" type="application/json">{"scores": {{ user.tests_taken|map(attribute='score')|list|tojson }}, "dates": {{ ns.dates|tojson }}}</script>
+{% endif %}
+
 <script>
 function filterTests(filter) {
     const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    const ev = window.event || undefined;
+    if (ev && ev.target) {
+        ev.target.classList.add('active');
+    }
     
     const historyItems = document.querySelectorAll('.history-item');
     const items = Array.from(historyItems);
@@ -181,9 +200,19 @@ function filterTests(filter) {
 // Performance Chart (if Chart.js is available)
 if (typeof Chart !== 'undefined' && document.getElementById('performanceChart')) {
     const ctx = document.getElementById('performanceChart').getContext('2d');
-    const testData = {{ user.tests_taken|map(attribute='score')|list|tojson }};
-    const testDates = {{ user.tests_taken|map(attribute='test_date.strftime', '%m-%d')|list|tojson }};
-    
+    let testData = [];
+    let testDates = [];
+    const dataEl = document.getElementById('chart-data');
+    if (dataEl) {
+        try {
+            const parsed = JSON.parse(dataEl.textContent);
+            testData = parsed.scores || [];
+            testDates = parsed.dates || [];
+        } catch (e) {
+            console.error('Failed to parse chart data', e);
+        }
+    }
+
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -209,5 +238,3 @@ if (typeof Chart !== 'undefined' && document.getElementById('performanceChart'))
 }
 </script>
 {% endblock %}
-
-

@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Driver Testing Platform{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pagination.css') }}">
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    {% block head %}{% endblock %}
 </head>
-<body>
-    <nav class="navbar">
+<body class="{% block body_class %}{% endblock %}">
+    <nav class="navbar" id="mainNavbar">
         <div class="nav-container">
-            <a href="{{ url_for('index') }}" class="nav-logo">Tyaira</a>
-            <div class="nav-menu">
+            <div class="nav-brand">
+                <a href="{{ url_for('index') }}">Tyaira</a>
+            </div>
+            <div class="nav-menu" id="nav-menu">
                 <a href="{{ url_for('index') }}" class="nav-link">Home</a>
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
@@ -25,26 +31,62 @@
                     <a href="{{ url_for('register') }}" class="nav-link">Register</a>
                 {% endif %}
             </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
         </div>
     </nav>
 
-    <main class="container">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for message in messages %}
-                        <div class="flash-message">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+    <!-- Minimal Test Navigation (only shown during tests) -->
+    <nav class="test-navbar" id="testNavbar" style="display: none;">
+        <div class="test-nav-container">
+            <button class="back-btn" id="backToMainBtn" onclick="exitTest()">
+                <i data-feather="arrow-left"></i> Exit Test
+            </button>
+            <div class="test-nav-brand">
+                <span>Tyaira - Driving Test</span>
+            </div>
+            <button class="nav-collapse-btn" id="navCollapseBtn" onclick="toggleMainNav()">
+                <i data-feather="menu"></i>
+            </button>
+        </div>
+    </nav>
 
+    <main class="main-content">
         {% block content %}{% endblock %}
     </main>
 
     <footer class="footer">
         <p>&copy; 2024 Driver Testing Platform - Zimbabwe</p>
     </footer>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        if (window.feather && feather.replace) feather.replace();
+      });
+    </script>
+
+    <!-- Toast Notification -->
+    <div id="toast-container"></div>
+    <script>
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
-

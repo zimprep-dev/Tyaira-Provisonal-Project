@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Test Review - Mobile</title>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobile-review.css') }}">
+</head>
+<body class="mobile-review-body">
+    <!-- Header -->
+    <div class="mobile-review-header">
+        <a href="/dashboard" class="back-link">
+            <i data-feather="arrow-left"></i>
+            <span>Back</span>
+        </a>
+        <h1>Test Review</h1>
+    </div>
+
+    <!-- Score Summary -->
+    <div class="score-summary">
+        <div class="score-circle">
+            <div class="score-percentage">{{ percentage }}%</div>
+        </div>
+        <div class="score-details">
+            <h2>{{ test_result.score }} / {{ test_result.total_questions }}</h2>
+            <p class="score-label">Correct Answers</p>
+            <p class="test-date">{{ test_result.test_date.strftime('%B %d, %Y') }}</p>
+        </div>
+    </div>
+
+    <!-- Questions Review -->
+    <div class="questions-review">
+        <h3>Questions & Answers</h3>
+        
+        {% for answer in test_result.answers %}
+        <div class="review-question-card {% if answer.is_correct %}correct{% else %}incorrect{% endif %}">
+            <!-- Question Header -->
+            <div class="review-question-header">
+                <span class="question-number">Question {{ loop.index }}</span>
+                <span class="result-badge">
+                    {% if answer.is_correct %}
+                        <i data-feather="check-circle"></i> Correct
+                    {% else %}
+                        <i data-feather="x-circle"></i> Incorrect
+                    {% endif %}
+                </span>
+            </div>
+
+            <!-- Question Image (if exists) -->
+            {% if answer.question.image_path %}
+            <div class="review-image">
+                {% set image_filename = answer.question.image_path.replace('\\', '/').split('/')[-1] %}
+                <img src="{{ url_for('uploaded_file', filename='images/' + image_filename) }}" 
+                     alt="Question diagram"
+                     onerror="this.parentElement.style.display='none'">
+            </div>
+            {% endif %}
+
+            <!-- Question Text -->
+            <div class="review-question-text">
+                <p>{{ answer.question.question_text }}</p>
+            </div>
+
+            <!-- Answer Options -->
+            <div class="review-options">
+                {% for option in answer.question.options %}
+                <div class="review-option 
+                    {% if option.option_letter == answer.user_answer %}user-answer{% endif %}
+                    {% if option.is_correct %}correct-answer{% endif %}">
+                    <span class="option-letter">{{ option.option_letter }}</span>
+                    <span class="option-text">{{ option.option_text }}</span>
+                    
+                    {% if option.option_letter == answer.user_answer %}
+                        <span class="answer-label">Your answer</span>
+                    {% endif %}
+                    
+                    {% if option.is_correct %}
+                        <span class="correct-label">
+                            <i data-feather="check"></i> Correct
+                        </span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Explanation (if incorrect) -->
+            {% if not answer.is_correct %}
+            <div class="explanation">
+                <i data-feather="info"></i>
+                <p>The correct answer is <strong>{{ answer.question.get_correct_option().option_letter }}</strong>: 
+                   {{ answer.question.get_correct_option().option_text }}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="review-actions">
+        <a href="/take_test" class="mobile-action-btn primary">
+            <i data-feather="refresh-cw"></i>
+            Take Another Test
+        </a>
+        <a href="/dashboard" class="mobile-action-btn secondary">
+            <i data-feather="home"></i>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>

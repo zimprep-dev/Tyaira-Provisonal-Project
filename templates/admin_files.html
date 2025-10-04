@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% from 'macros/_pagination.html' import render_pagination %}
+
+{% block title %}File Management - CMS{% endblock %}
+
+{% block content %}
+<div class="cms-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i data-feather="folder"></i> File Management</h1>
+            <p>Upload and manage images and PDF resources</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="showUploadModalBtn">
+                <i data-feather="upload"></i> Upload Files
+            </button>
+        </div>
+    </div>
+
+    <!-- File Filters -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <label>File Type:</label>
+            <select id="typeFilter">
+                <option value="">All Files</option>
+                <option value="image">Images</option>
+                <option value="pdf">PDFs</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Search:</label>
+            <input type="text" id="searchFilter" placeholder="Search files...">
+        </div>
+        <div class="filter-stats">
+            <span class="file-count">{{ files|length }} files total</span>
+        </div>
+    </div>
+
+    <!-- Files Grid -->
+    <div class="files-grid">
+        {% for file in files %}
+        <div class="file-card" data-type="{{ file.type }}" id="file-{{ file.id }}">
+            <div class="file-preview">
+                {% if file.type == 'image' %}
+                <div class="image-preview">
+                    <img src="{{ file.url }}" alt="{{ file.name }}" loading="lazy">
+                </div>
+                {% elif file.type == 'pdf' %}
+                <div class="pdf-preview">
+                    <div class="pdf-icon"><i data-feather="file-text"></i></div>
+                    <span class="file-name">{{ file.name }}</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="file-info">
+                <div class="file-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Size:</span>
+                        <span class="detail-value">{{ file.size }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Uploaded:</span>
+                        <span class="detail-value">{{ file.uploaded }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Type:</span>
+                        <span class="detail-value">{{ file.type|title }}</span>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="btn btn-sm btn-secondary action-view" data-url="{{ file.url }}" data-type="{{ file.type }}" data-name="{{ file.name }}">
+                        <i data-feather="eye"></i> View
+                    </button>
+                    <button class="btn btn-sm btn-primary action-copy" data-url="{{ file.url }}">
+                        <i data-feather="link"></i> Copy URL
+                    </button>
+                    <button class="btn btn-sm btn-danger action-delete" data-id="{{ file.id }}">
+                        <i data-feather="trash-2"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state full-width">
+            <h3>No Files Found</h3>
+            <p>Upload some images or PDFs to see them here.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pagination and pagination.pages > 1 %}
+    <div class="pagination-wrapper">
+        {{ render_pagination(pagination, 'admin_files') }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal" style="display: none;">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h2><i data-feather="upload"></i> Upload Files</h2>
+            <button class="modal-close" id="hideUploadModalBtn">&times;</button>
+        </div>
+        
+        <div class="upload-container">
+            <div class="upload-tabs">
+                <button class="upload-tab-btn active" data-tab="images" id="images-tab-btn">
+                    <i data-feather="image"></i> Images
+                </button>
+                <button class="upload-tab-btn" data-tab="pdfs" id="pdfs-tab-btn">
+                    <i data-feather="file-text"></i> PDFs
+                </button>
+            </div>
+            
+            <!-- Image Upload -->
+            <div id="images-upload" class="upload-tab-content active">
+                <div class="upload-area" id="imageUploadArea">
+                    <input type="file" id="imageFiles" multiple accept="image/*">
+                    <div class="upload-placeholder">
+                        <div class="upload-icon"><i data-feather="camera"></i></div>
+                        <h3>Upload Question Images</h3>
+                        <p>Drag & drop images here or click to browse</p>
+                        <small>PNG, JPG, JPEG, WebP (max 2MB each)</small>
+                    </div>
+                </div>
+                <div id="imagePreviewContainer" class="preview-container"></div>
+            </div>
+            
+            <!-- PDF Upload -->
+            <div id="pdfs-upload" class="upload-tab-content">
+                <div class="upload-area" id="pdfUploadArea">
+                    <input type="file" id="pdfFiles" multiple accept=".pdf">
+                    <div class="upload-placeholder">
+                        <div class="upload-icon"><i data-feather="file-text"></i></div>
+                        <h3>Upload PDF Resources</h3>
+                        <p>Drag & drop PDFs here or click to browse</p>
+                        <small>PDF files (max 10MB each)</small>
+                    </div>
+                </div>
+                <div id="pdfPreviewContainer" class="preview-container"></div>
+            </div>
+            
+            <div class="upload-actions">
+                <button type="button" class="btn btn-secondary" id="cancelUploadBtn">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="uploadFilesBtn">
+                    <i data-feather="upload"></i> Upload Files
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File Viewer Modal -->
+<div id="fileViewerModal" class="modal" style="display: none;">
+    <div class="modal-content extra-large">
+        <div class="modal-header">
+            <h2 id="viewerTitle">File Viewer</h2>
+            <button class="modal-close" id="hideFileViewerBtn">&times;</button>
+        </div>
+        <div class="file-viewer-content" id="fileViewerContent">
+            <!-- File content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteFileModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Confirm Deletion</h2>
+            <button class="modal-close" id="hideDeleteModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete this file? This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteFileBtn">Delete</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let selectedFiles = { images: [], pdfs: [] };
+        let fileIdToDelete = null;
+
+        const showModal = (modalId) => {
+            document.getElementById(modalId).style.display = 'flex';
+            document.body.classList.add('modal-open');
+        };
+
+        const hideModal = (modalId) => {
+            document.getElementById(modalId).style.display = 'none';
+            document.body.classList.remove('modal-open');
+        };
+
+        const showUploadTab = (tabName) => {
+            document.querySelectorAll('.upload-tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.upload-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`${tabName}-upload`).classList.add('active');
+            document.querySelector(`.upload-tab-btn[data-tab='${tabName}']`).classList.add('active');
+        };
+
+        const filterFiles = () => {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            let visibleCount = 0;
+            document.querySelectorAll('.file-card').forEach(card => {
+                const typeMatch = !typeFilter || card.dataset.type === typeFilter;
+                const searchMatch = !searchFilter || card.textContent.toLowerCase().includes(searchFilter);
+                if (typeMatch && searchMatch) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            document.querySelector('.file-count').textContent = `${visibleCount} files shown`;
+        };
+
+        const displayPreviews = (files, type) => {
+            const container = document.getElementById(`${type}PreviewContainer`);
+            container.innerHTML = '';
+            files.forEach((file, index) => {
+                const preview = document.createElement('div');
+                preview.className = `file-preview-item ${type === 'pdfs' ? 'pdf' : ''}`;
+                const size = type === 'images' ? `${(file.size / 1024).toFixed(1)} KB` : `${(file.size / 1024 / 1024).toFixed(1)} MB`;
+                
+                let previewContent = type === 'images' 
+                    ? `<img src="${URL.createObjectURL(file)}" alt="${file.name}">` 
+                    : `<div class="pdf-preview-icon"><i data-feather="file-text"></i></div>`;
+
+                preview.innerHTML = `
+                    ${previewContent}
+                    <div class="preview-info">
+                        <span class="preview-name">${file.name}</span>
+                        <span class="preview-size">${size}</span>
+                    </div>
+                    <button class="remove-file" data-type="${type}" data-index="${index}">×</button>
+                `;
+                container.appendChild(preview);
+            });
+            feather.replace();
+        };
+
+        const uploadFiles = async () => {
+            const totalFiles = selectedFiles.images.length + selectedFiles.pdfs.length;
+            if (totalFiles === 0) {
+                showToast('Please select files to upload', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            selectedFiles.images.forEach(file => formData.append('images', file));
+            selectedFiles.pdfs.forEach(file => formData.append('pdfs', file));
+
+            const uploadBtn = document.getElementById('uploadFilesBtn');
+            uploadBtn.innerHTML = '<i data-feather="loader"></i> Uploading...';
+            uploadBtn.disabled = true;
+            feather.replace();
+
+            try {
+                const response = await fetch('/upload_files', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'Unknown error');
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } catch (error) {
+                showToast(`Upload failed: ${error.message}`, 'error');
+            } finally {
+                uploadBtn.innerHTML = '<i data-feather="upload"></i> Upload Files';
+                uploadBtn.disabled = false;
+                feather.replace();
+                hideModal('uploadModal');
+            }
+        };
+
+        // --- Event Listeners ---
+        document.getElementById('showUploadModalBtn').addEventListener('click', () => showModal('uploadModal'));
+        document.getElementById('hideUploadModalBtn').addEventListener('click', () => hideModal('uploadModal'));
+        document.getElementById('cancelUploadBtn').addEventListener('click', () => hideModal('uploadModal'));
+        document.getElementById('uploadFilesBtn').addEventListener('click', uploadFiles);
+
+        document.getElementById('hideFileViewerBtn').addEventListener('click', () => hideModal('fileViewerModal'));
+        document.getElementById('hideDeleteModalBtn').addEventListener('click', () => hideModal('deleteFileModal'));
+        document.getElementById('cancelDeleteBtn').addEventListener('click', () => hideModal('deleteFileModal'));
+
+        document.getElementById('typeFilter').addEventListener('change', filterFiles);
+        document.getElementById('searchFilter').addEventListener('keyup', filterFiles);
+
+        document.querySelectorAll('.upload-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => showUploadTab(btn.dataset.tab));
+        });
+
+        document.getElementById('imageFiles').addEventListener('change', (e) => {
+            selectedFiles.images = Array.from(e.target.files);
+            displayPreviews(selectedFiles.images, 'images');
+        });
+
+        document.getElementById('pdfFiles').addEventListener('change', (e) => {
+            selectedFiles.pdfs = Array.from(e.target.files);
+            displayPreviews(selectedFiles.pdfs, 'pdfs');
+        });
+        
+        document.querySelector('.files-grid').addEventListener('click', (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+
+            if (target.classList.contains('action-view')) {
+                document.getElementById('viewerTitle').textContent = target.dataset.name || 'File Viewer';
+                const contentHtml = target.dataset.type === 'image' 
+                    ? `<img src="${target.dataset.url}" alt="${target.dataset.name}" style="max-width:100%; max-height:80vh;"/>`
+                    : `<iframe src="${target.dataset.url}" title="${target.dataset.name}" style="width:100%; height:80vh; border:none;"></iframe>`;
+                document.getElementById('fileViewerContent').innerHTML = contentHtml;
+                showModal('fileViewerModal');
+            }
+
+            if (target.classList.contains('action-copy')) {
+                const fullUrl = target.dataset.url.startsWith('http') ? target.dataset.url : (window.location.origin + target.dataset.url);
+                navigator.clipboard.writeText(fullUrl).then(() => showToast('File URL copied!', 'success'));
+            }
+
+            if (target.classList.contains('action-delete')) {
+                fileIdToDelete = target.dataset.id;
+                showModal('deleteFileModal');
+            }
+        });
+
+        document.getElementById('confirmDeleteFileBtn').addEventListener('click', async () => {
+            if (!fileIdToDelete) return;
+            try {
+                const response = await fetch(`/delete_file/${fileIdToDelete}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Server error');
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error || 'Deletion failed');
+
+                const cardToDelete = document.querySelector(`.action-delete[data-id='${fileIdToDelete}']`).closest('.file-card');
+                cardToDelete.style.transition = 'opacity 0.4s ease';
+                cardToDelete.style.opacity = '0';
+                setTimeout(() => cardToDelete.remove(), 400);
+                showToast('File deleted successfully.', 'success');
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                hideModal('deleteFileModal');
+                fileIdToDelete = null;
+            }
+        });
+
+        document.getElementById('imagePreviewContainer').addEventListener('click', (e) => {
+            if(e.target.classList.contains('remove-file')) {
+                selectedFiles.images.splice(e.target.dataset.index, 1);
+                displayPreviews(selectedFiles.images, 'images');
+            }
+        });
+
+        document.getElementById('pdfPreviewContainer').addEventListener('click', (e) => {
+            if(e.target.classList.contains('remove-file')) {
+                selectedFiles.pdfs.splice(e.target.dataset.index, 1);
+                displayPreviews(selectedFiles.pdfs, 'pdfs');
+            }
+        });
+    });
+</script>
+{% endblock %}

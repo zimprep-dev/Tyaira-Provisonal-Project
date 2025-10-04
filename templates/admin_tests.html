@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}Test Configuration - CMS{% endblock %}
+
+{% block content %}
+<div class="cms-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i data-feather="settings"></i> Test Configuration</h1>
+            <p>Create and manage test settings</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="showTestModal()">
+                <i data-feather="plus"></i> Create New Test
+            </button>
+        </div>
+    </div>
+
+    <!-- Test Configurations -->
+    <div class="test-configs-container">
+        {% for config in test_configs %}
+        <div class="test-config-card">
+            <div class="config-header">
+                <div class="config-info">
+                    <h3>{{ config.name }}</h3>
+                    <div class="config-status">
+                        <span class="status-badge {{ 'active' if config.active else 'inactive' }}">
+                            {{ 'Active' if config.active else 'Inactive' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="config-actions">
+                    <button class="btn btn-sm btn-secondary action-edit" data-id="{{ config.id }}">
+                        <i data-feather="edit-2"></i> Edit
+                    </button>
+                    <button class="btn btn-sm {{ 'btn-warning' if config.active else 'btn-primary' }} action-toggle" 
+                            data-id="{{ config.id }}">
+                        {{ '<i data-feather=\'play-circle\'></i> Activate' if not config.active else '<i data-feather=\'pause-circle\'></i> Deactivate' | safe }}
+                    </button>
+                    <button class="btn btn-sm btn-danger action-delete" data-id="{{ config.id }}">
+                        <i data-feather="trash-2"></i> Delete
+                    </button>
+                </div>
+            </div>
+            
+            <div class="config-details">
+                <div class="detail-item">
+                    <span class="detail-label">Questions:</span>
+                    <span class="detail-value">{{ config.questions }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Time Limit:</span>
+                    <span class="detail-value">{{ config.time_limit }} minutes</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Categories:</span>
+                    <span class="detail-value">All Categories</span>
+                </div>
+            </div>
+            
+            <div class="config-preview">
+                <button class="btn btn-sm btn-secondary action-preview" data-id="{{ config.id }}">
+                    <i data-feather="eye"></i> Preview Test
+                </button>
+                <button class="btn btn-sm btn-primary action-generate" data-id="{{ config.id }}">
+                    <i data-feather="shuffle"></i> Generate Sample
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Test Configuration Modal -->
+<div id="testModal" class="modal" style="display: none;">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h2 id="testModalTitle"><i data-feather="plus"></i> Create New Test</h2>
+            <button class="modal-close" onclick="hideTestModal()">&times;</button>
+        </div>
+        
+        <form id="testForm" class="test-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Test Name:</label>
+                    <input type="text" id="testName" placeholder="e.g., Practice Test" required>
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="testStatus">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Number of Questions:</label>
+                    <input type="number" id="questionCount" value="25" min="5" max="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Time Limit (minutes):</label>
+                    <input type="number" id="timeLimit" value="30" min="5" max="120" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Question Categories:</label>
+                <div class="category-selector">
+                    <div class="category-option">
+                        <input type="checkbox" id="cat-giveway" value="Give Way" checked>
+                        <label for="cat-giveway">Give Way</label>
+                    </div>
+                    <div class="category-option">
+                        <input type="checkbox" id="cat-traffic" value="Traffic Signs" checked>
+                        <label for="cat-traffic">Traffic Signs</label>
+                    </div>
+                    <div class="category-option">
+                        <input type="checkbox" id="cat-speed" value="Speed Limits" checked>
+                        <label for="cat-speed">Speed Limits</label>
+                    </div>
+                    <div class="category-option">
+                        <input type="checkbox" id="cat-safety" value="Safety" checked>
+                        <label for="cat-safety">Safety</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Difficulty Distribution:</label>
+                <div class="difficulty-sliders">
+                    <div class="slider-group">
+                        <label>Basic: <span id="basicPercent">50</span>%</label>
+                        <input type="range" id="basicSlider" min="0" max="100" value="50" 
+                               oninput="updateDifficultySliders()">
+                    </div>
+                    <div class="slider-group">
+                        <label>Intermediate: <span id="intermediatePercent">30</span>%</label>
+                        <input type="range" id="intermediateSlider" min="0" max="100" value="30" 
+                               oninput="updateDifficultySliders()">
+                    </div>
+                    <div class="slider-group">
+                        <label>Advanced: <span id="advancedPercent">20</span>%</label>
+                        <input type="range" id="advancedSlider" min="0" max="100" value="20" 
+                               oninput="updateDifficultySliders()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideTestModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i data-feather="save"></i> Save Test Configuration
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Confirm Deletion</h2>
+            <button class="modal-close" onclick="hideDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete this test configuration? This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideDeleteModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let currentEditingTestId = null;
+    let testIdToDelete = null;
+
+    // --- Modal Control ---
+    const showModal = (modalId) => {
+        document.getElementById(modalId).style.display = 'flex';
+        document.body.classList.add('modal-open');
+    };
+    const hideModal = (modalId) => {
+        document.getElementById(modalId).style.display = 'none';
+        document.body.classList.remove('modal-open');
+    };
+
+    window.showTestModal = () => {
+        currentEditingTestId = null;
+        const testModalTitle = document.getElementById('testModalTitle');
+        if (testModalTitle) testModalTitle.innerHTML = '<i data-feather="plus"></i> Create New Test';
+        document.getElementById('testForm').reset();
+        // Manually reset checkboxes
+        document.querySelectorAll('.category-option input[type="checkbox"]').forEach(cb => cb.checked = true);
+        showModal('testModal');
+        if (window.feather) feather.replace();
+    };
+    window.hideTestModal = () => hideModal('testModal');
+    window.hideDeleteModal = () => hideModal('deleteConfirmModal');
+
+    // --- Main Actions ---
+    const editTest = async (testId) => {
+        try {
+            const response = await fetch(`/admin/test_config/${testId}`);
+            if (!response.ok) throw new Error('Failed to fetch test data.');
+            const data = await response.json();
+
+            currentEditingTestId = testId;
+            const testModalTitle = document.getElementById('testModalTitle');
+            if (testModalTitle) testModalTitle.innerHTML = '<i data-feather="edit-2"></i> Edit Test Configuration';
+            
+            document.getElementById('testName').value = data.name;
+            document.getElementById('testStatus').value = data.active.toString();
+            document.getElementById('questionCount').value = data.questionCount;
+            document.getElementById('timeLimit').value = data.timeLimit;
+            
+            document.querySelectorAll('.category-option input').forEach(cb => cb.checked = false);
+            if (data.categories) {
+                data.categories.forEach(cat => {
+                    const cb = document.querySelector(`.category-option input[value="${cat}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+
+            showModal('testModal');
+            if (window.feather) feather.replace();
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    };
+
+    const toggleTest = async (testId, button) => {
+        try {
+            const response = await fetch(`/admin/test_config/${testId}/toggle`, { method: 'POST' });
+            if (!response.ok) throw new Error('Server error.');
+            const data = await response.json();
+
+            if (data.success) {
+                const card = button.closest('.test-config-card');
+                const statusBadge = card.querySelector('.status-badge');
+                const newStatus = data.new_status;
+
+                statusBadge.textContent = newStatus ? 'Active' : 'Inactive';
+                statusBadge.className = `status-badge ${newStatus ? 'active' : 'inactive'}`;
+
+                button.innerHTML = newStatus ? '<i data-feather="pause-circle"></i> Deactivate' : '<i data-feather="play-circle"></i> Activate';
+                button.className = `btn btn-sm ${newStatus ? 'btn-warning' : 'btn-primary'} action-toggle`;
+                if (window.feather) feather.replace();
+                showToast('Status updated!', 'success');
+            }
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    };
+
+    const deleteTest = (testId) => {
+        testIdToDelete = testId;
+        showModal('deleteConfirmModal');
+    };
+
+    // --- Event Listeners ---
+    document.querySelector('.page-header .btn-primary').addEventListener('click', showTestModal);
+
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('button');
+        if (!btn || !btn.dataset.id) return;
+
+        const id = btn.dataset.id;
+        if (btn.classList.contains('action-edit')) { e.preventDefault(); editTest(id); }
+        if (btn.classList.contains('action-toggle')) { e.preventDefault(); toggleTest(id, btn); }
+        if (btn.classList.contains('action-delete')) { e.preventDefault(); deleteTest(id); }
+    });
+
+    document.getElementById('testForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const selectedCategories = Array.from(document.querySelectorAll('.category-option input:checked')).map(cb => cb.value);
+        
+        const formData = {
+            name: document.getElementById('testName').value,
+            active: document.getElementById('testStatus').value === 'true',
+            questionCount: document.getElementById('questionCount').value,
+            timeLimit: document.getElementById('timeLimit').value,
+            categories: selectedCategories,
+            difficulty: { basic: 50, intermediate: 30, advanced: 20 }
+        };
+
+        const url = currentEditingTestId ? `/admin/test_config/${currentEditingTestId}` : '/admin/test_config';
+        const method = currentEditingTestId ? 'PUT' : 'POST'; // Corrected: PUT for update, POST for create
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.error || 'Save failed.');
+
+            hideModal('testModal');
+            showToast(data.message, 'success');
+            
+            // Dynamic UI update
+            const newCardHTML = createTestCard(data.test_config);
+            if (currentEditingTestId) {
+                const oldCard = document.querySelector(`.test-config-card .action-edit[data-id='${currentEditingTestId}']`).closest('.test-config-card');
+                oldCard.outerHTML = newCardHTML;
+            } else {
+                document.querySelector('.test-configs-container').insertAdjacentHTML('afterbegin', newCardHTML);
+            }
+            if (window.feather) feather.replace();
+
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (!testIdToDelete) return;
+        try {
+            const response = await fetch(`/delete_test/${testIdToDelete}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Server error during deletion.');
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Deletion failed.');
+
+            const cardToDelete = document.querySelector(`.action-delete[data-id='${testIdToDelete}']`).closest('.test-config-card');
+            if (cardToDelete) {
+                cardToDelete.style.transition = 'opacity 0.4s ease';
+                cardToDelete.style.opacity = '0';
+                setTimeout(() => cardToDelete.remove(), 400);
+            }
+            hideModal('deleteConfirmModal');
+            showToast('Test configuration deleted.', 'success');
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        } finally {
+            testIdToDelete = null;
+        }
+    });
+
+    // Close modals on outside click
+    window.addEventListener('click', (event) => {
+        if (event.target.classList.contains('modal')) {
+            hideModal(event.target.id);
+        }
+    });
+
+    function createTestCard(config) {
+        const activeBadge = config.active ? '<span class="status-badge active">Active</span>' : '<span class="status-badge inactive">Inactive</span>';
+        const toggleButton = config.active 
+            ? `<button class="btn btn-sm btn-warning action-toggle" data-id="${config.id}"><i data-feather='pause-circle'></i> Deactivate</button>`
+            : `<button class="btn btn-sm btn-primary action-toggle" data-id="${config.id}"><i data-feather='play-circle'></i> Activate</button>`;
+
+        return `
+        <div class="test-config-card">
+            <div class="config-header">
+                <div class="config-info">
+                    <h3>${config.name}</h3>
+                    <div class="config-status">${activeBadge}</div>
+                </div>
+                <div class="config-actions">
+                    <button class="btn btn-sm btn-secondary action-edit" data-id="${config.id}"><i data-feather="edit-2"></i> Edit</button>
+                    ${toggleButton}
+                    <button class="btn btn-sm btn-danger action-delete" data-id="${config.id}"><i data-feather="trash-2"></i> Delete</button>
+                </div>
+            </div>
+            <div class="config-details">
+                <div class="detail-item">
+                    <span class="detail-label">Questions:</span>
+                    <span class="detail-value">${config.questions}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Time Limit:</span>
+                    <span class="detail-value">${config.time_limit} minutes</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Categories:</span>
+                    <span class="detail-value">All Categories</span>
+                </div>
+            </div>
+            <div class="config-preview">
+                <button class="btn btn-sm btn-secondary action-preview" data-id="${config.id}">
+                    <i data-feather="eye"></i> Preview Test
+                </button>
+                <button class="btn btn-sm btn-primary action-generate" data-id="${config.id}">
+                    <i data-feather="shuffle"></i> Generate Sample
+                </button>
+            </div>
+        </div>`;
+    }
+});
+</script>
+{% endblock %}

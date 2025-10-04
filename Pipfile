@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+flask-login = "==0.6.3"
+flask-wtf = "==1.1.1"
+werkzeug = "==2.3.7"
+python-dotenv = "==1.0.0"
+psycopg2 = "*"
+flask = "*"
+flask-sqlalchemy = "*"
+boto3 = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.13"
