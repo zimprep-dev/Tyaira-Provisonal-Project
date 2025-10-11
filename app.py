@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Question, AnswerOption, TestResult, Answer, TestCategory, UploadedFile, TestSession, TestConfig, ActivityLog
 from datetime import datetime, timedelta
