@@ -8,6 +8,7 @@ const mobileTestInterface = {
     timerInterval: null,
     timeLimit: 480, // 8 minutes in seconds
     timeRemaining: 480,
+    sessionId: null,
 
     initializeTest() {
         const category = document.querySelector('.mobile-test-container').dataset.category;
