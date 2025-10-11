@@ -10,7 +10,7 @@ services:
     startCommand: "gunicorn wsgi:app"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.5
+        value: 3.11.9
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
@@ -20,7 +20,7 @@ services:
     autoDeploy: true
 
   # PostgreSQL Database
-  - type: pgsql
+  - type: postgres
     name: tyaira-db
     region: oregon
     plan: free
