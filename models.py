@@ -60,7 +60,7 @@ class Question(db.Model):
     question_text = db.Column(db.Text, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('test_category.id'), nullable=False)
     difficulty = db.Column(db.String(20), default='basic')
-    image_path = db.Column(db.String(200))
+    image_path = db.Column(db.String(500))  # Now stores URL or local path
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
     options = db.relationship('AnswerOption', backref='question', lazy=True, cascade="all, delete-orphan")
     
@@ -89,11 +89,12 @@ class UploadedFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(200), nullable=False)
     original_filename = db.Column(db.String(200), nullable=False)
-    file_path = db.Column(db.String(300), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)  # Now stores URL or local path
     file_type = db.Column(db.String(20), nullable=False)  # 'image' or 'pdf'
     file_size = db.Column(db.Integer, nullable=False)
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    cloudinary_public_id = db.Column(db.String(300))  # For Cloudinary file management
 
 # Track active test sessions (lightweight)
 class TestSession(db.Model):

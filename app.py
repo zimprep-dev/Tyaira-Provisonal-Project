@@ -1,18 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
-from sqlalchemy import func, case
-from flask_migrate import Migrate
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
+from models import db, User, Question, AnswerOption, TestResult, Answer, TestCategory, UploadedFile, TestSession, TestConfig, ActivityLog
+from datetime import datetime, timedelta
+import random
 import json
 import os
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-import random
 import uuid
+import file_storage
 from dotenv import load_dotenv
 from utils import is_mobile_device, get_device_type
-from models import db, User, TestResult, Answer, TestCategory, Question, AnswerOption, UploadedFile, TestSession, TestConfig, ActivityLog
 
 # Load environment variables
 load_dotenv()
@@ -576,22 +573,34 @@ def upload_files():
         image_files = request.files.getlist('images')
         for file in image_files:
             if file and file.filename and allowed_file(file.filename, 'image'):
-                # Generate unique filename
-                file_extension = file.filename.rsplit('.', 1)[1].lower()
-                unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-                
-                # Save file
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', unique_filename)
-                file.save(file_path)
+                # Try Cloudinary first, fallback to local storage
+                if file_storage.is_cloudinary_configured():
+                    success, result = file_storage.upload_image(file, folder='question_images')
+                    if success:
+                        file_url = result
+                        public_id = file_storage.get_public_id_from_url(file_url)
+                    else:
+                        flash(f'Error uploading {file.filename}: {result}', 'error')
+                        continue
+                else:
+                    # Fallback to local storage
+                    success, result = file_storage.save_local_file(file, app.config['UPLOAD_FOLDER'], 'images')
+                    if success:
+                        file_url = f"/uploads/{result}"
+                        public_id = None
+                    else:
+                        flash(f'Error uploading {file.filename}: {result}', 'error')
+                        continue
                 
                 # Save to database
                 uploaded_file = UploadedFile(
-                    filename=unique_filename,
+                    filename=os.path.basename(file_url),
                     original_filename=file.filename,
-                    file_path=file_path,
+                    file_path=file_url,
                     file_type='image',
-                    file_size=os.path.getsize(file_path),
-                    uploaded_by=current_user.id
+                    file_size=0,  # Cloudinary doesn't provide size easily
+                    uploaded_by=current_user.id,
+                    cloudinary_public_id=public_id
                 )
                 db.session.add(uploaded_file)
                 uploaded_files.append(file.filename)
@@ -601,22 +610,34 @@ def upload_files():
         pdf_files = request.files.getlist('pdfs')
         for file in pdf_files:
             if file and file.filename and allowed_file(file.filename, 'pdf'):
-                # Generate unique filename
-                file_extension = file.filename.rsplit('.', 1)[1].lower()
-                unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-                
-                # Save file
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'pdfs', unique_filename)
-                file.save(file_path)
+                # Try Cloudinary first, fallback to local storage
+                if file_storage.is_cloudinary_configured():
+                    success, result = file_storage.upload_pdf(file, folder='documents')
+                    if success:
+                        file_url = result
+                        public_id = file_storage.get_public_id_from_url(file_url)
+                    else:
+                        flash(f'Error uploading {file.filename}: {result}', 'error')
+                        continue
+                else:
+                    # Fallback to local storage
+                    success, result = file_storage.save_local_file(file, app.config['UPLOAD_FOLDER'], 'pdfs')
+                    if success:
+                        file_url = f"/uploads/{result}"
+                        public_id = None
+                    else:
+                        flash(f'Error uploading {file.filename}: {result}', 'error')
+                        continue
                 
                 # Save to database
                 uploaded_file = UploadedFile(
-                    filename=unique_filename,
+                    filename=os.path.basename(file_url),
                     original_filename=file.filename,
-                    file_path=file_path,
+                    file_path=file_url,
                     file_type='pdf',
-                    file_size=os.path.getsize(file_path),
-                    uploaded_by=current_user.id
+                    file_size=0,  # Cloudinary doesn't provide size easily
+                    uploaded_by=current_user.id,
+                    cloudinary_public_id=public_id
                 )
                 db.session.add(uploaded_file)
                 uploaded_files.append(file.filename)
