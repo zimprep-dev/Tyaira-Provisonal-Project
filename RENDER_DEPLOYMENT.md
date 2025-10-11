@@ -252,6 +252,12 @@ git push
 - Check database is in same region as web service
 - Use **Internal Database URL** (not External)
 
+### Password Hash Error (FIXED)
+If you see `value too long for type character varying(120)`:
+- **Fixed in latest version**: `password_hash` field increased to 255 characters
+- Modern password hashing (scrypt) generates ~157 character hashes
+- Migration automatically applied during deployment
+
 ### App Won't Start
 - Check logs for errors
 - Verify all environment variables are set
