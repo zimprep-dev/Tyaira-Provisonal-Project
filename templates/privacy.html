@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy - Tyaira Driving Test Platform{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <div class="legal-container">
+        <div class="legal-header">
+            <h1>Privacy Policy</h1>
+            <p class="last-updated">Last Updated: October 5, 2025</p>
+        </div>
+
+        <div class="legal-content">
+            <section class="legal-section">
+                <h2>1. Introduction</h2>
+                <p>Tyaira ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Driving Test Platform.</p>
+                <p>By using the Platform, you consent to the data practices described in this policy.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>2. Information We Collect</h2>
+                
+                <h3>2.1 Personal Information</h3>
+                <p>When you register for an account, we collect:</p>
+                <ul>
+                    <li><strong>Username:</strong> Your chosen display name</li>
+                    <li><strong>Email Address:</strong> For account verification and communication</li>
+                    <li><strong>Password:</strong> Stored securely using industry-standard hashing (bcrypt)</li>
+                </ul>
+
+                <h3>2.2 Subscription Information</h3>
+                <p>For premium subscribers, we collect:</p>
+                <ul>
+                    <li><strong>Subscription Status:</strong> Whether you have an active premium subscription</li>
+                    <li><strong>Subscription Date:</strong> When your subscription started</li>
+                    <li><strong>Payment Information:</strong> Processed securely through third-party payment providers (we do not store credit card details)</li>
+                </ul>
+
+                <h3>2.3 Usage and Performance Data</h3>
+                <p>We automatically collect information about your use of the Platform:</p>
+                <ul>
+                    <li><strong>Test Results:</strong> Your scores, completion times, and answer selections</li>
+                    <li><strong>Test History:</strong> Records of all tests taken, including date and time</li>
+                    <li><strong>Performance Analytics:</strong> Average scores, best scores, and category-specific performance</li>
+                    <li><strong>Download Count:</strong> Number of PDF resources downloaded</li>
+                    <li><strong>Last Activity:</strong> Date of your most recent test or login</li>
+                </ul>
+
+                <h3>2.4 Technical Information</h3>
+                <p>We automatically collect certain technical data:</p>
+                <ul>
+                    <li><strong>Device Information:</strong> Device type (mobile/desktop) for responsive UI delivery</li>
+                    <li><strong>Browser Information:</strong> Browser type and version</li>
+                    <li><strong>IP Address:</strong> For security and fraud prevention</li>
+                    <li><strong>Session Data:</strong> Login sessions and authentication tokens</li>
+                    <li><strong>Cookies:</strong> For maintaining your logged-in state</li>
+                </ul>
+
+                <h3>2.5 Admin Activity Logs</h3>
+                <p>For administrative users, we log:</p>
+                <ul>
+                    <li>Question management activities (add, edit, delete)</li>
+                    <li>User management actions</li>
+                    <li>System configuration changes</li>
+                    <li>Timestamps of administrative actions</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h2>3. How We Use Your Information</h2>
+                
+                <h3>3.1 To Provide Services</h3>
+                <ul>
+                    <li>Create and manage your user account</li>
+                    <li>Deliver personalized test experiences</li>
+                    <li>Track and display your test performance</li>
+                    <li>Provide performance analytics and insights</li>
+                    <li>Process premium subscriptions</li>
+                    <li>Manage download limits</li>
+                </ul>
+
+                <h3>3.2 To Improve the Platform</h3>
+                <ul>
+                    <li>Analyze usage patterns to enhance user experience</li>
+                    <li>Identify and fix technical issues</li>
+                    <li>Develop new features based on user behavior</li>
+                    <li>Optimize test content and difficulty levels</li>
+                </ul>
+
+                <h3>3.3 To Communicate With You</h3>
+                <ul>
+                    <li>Send account-related notifications</li>
+                    <li>Provide customer support</li>
+                    <li>Send subscription renewal reminders</li>
+                    <li>Notify you of platform updates or changes</li>
+                    <li>Respond to your inquiries</li>
+                </ul>
+
+                <h3>3.4 For Security and Compliance</h3>
+                <ul>
+                    <li>Prevent fraud and unauthorized access</li>
+                    <li>Enforce our Terms and Conditions</li>
+                    <li>Comply with legal obligations</li>
+                    <li>Protect user safety and platform integrity</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h2>4. Data Storage and Security</h2>
+                
+                <h3>4.1 Database Storage</h3>
+                <p>Your data is stored in a secure PostgreSQL database with the following protections:</p>
+                <ul>
+                    <li><strong>Password Encryption:</strong> All passwords are hashed using bcrypt before storage</li>
+                    <li><strong>Secure Connections:</strong> Database connections use SSL/TLS encryption</li>
+                    <li><strong>Access Controls:</strong> Strict database access permissions</li>
+                    <li><strong>Regular Backups:</strong> Automated database backups for data recovery</li>
+                </ul>
+
+                <h3>4.2 Session Security</h3>
+                <ul>
+                    <li>Secure session cookies with HttpOnly and Secure flags</li>
+                    <li>Session timeout after inactivity</li>
+                    <li>CSRF protection on all forms</li>
+                    <li>Login required for sensitive operations</li>
+                </ul>
+
+                <h3>4.3 File Storage</h3>
+                <ul>
+                    <li>Uploaded images stored in secure server directories</li>
+                    <li>PDF resources protected with access controls</li>
+                    <li>File size limits to prevent abuse (16MB maximum)</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h2>5. Data Sharing and Disclosure</h2>
+                
+                <h3>5.1 We DO NOT Sell Your Data</h3>
+                <p>We will never sell, rent, or trade your personal information to third parties for marketing purposes.</p>
+
+                <h3>5.2 Service Providers</h3>
+                <p>We may share data with trusted third-party service providers who assist us in:</p>
+                <ul>
+                    <li>Payment processing (subscription payments)</li>
+                    <li>Cloud hosting and infrastructure</li>
+                    <li>Email delivery services</li>
+                    <li>Analytics and monitoring tools</li>
+                </ul>
+                <p>These providers are contractually obligated to protect your data and use it only for specified purposes.</p>
+
+                <h3>5.3 Legal Requirements</h3>
+                <p>We may disclose your information if required to:</p>
+                <ul>
+                    <li>Comply with legal obligations or court orders</li>
+                    <li>Protect our rights, property, or safety</li>
+                    <li>Prevent fraud or security threats</li>
+                    <li>Enforce our Terms and Conditions</li>
+                </ul>
+
+                <h3>5.4 Business Transfers</h3>
+                <p>If Tyaira is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you of any such change.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>6. Cookies and Tracking</h2>
+                
+                <h3>6.1 Essential Cookies</h3>
+                <p>We use essential cookies to:</p>
+                <ul>
+                    <li>Maintain your logged-in session</li>
+                    <li>Remember your preferences</li>
+                    <li>Ensure platform security</li>
+                </ul>
+
+                <h3>6.2 Analytics</h3>
+                <p>We may use analytics tools to understand how users interact with the Platform. This helps us improve user experience and identify issues.</p>
+
+                <h3>6.3 Your Cookie Choices</h3>
+                <p>You can control cookies through your browser settings. However, disabling essential cookies may affect platform functionality.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>7. Your Privacy Rights</h2>
+                
+                <h3>7.1 Access and Portability</h3>
+                <p>You have the right to:</p>
+                <ul>
+                    <li>Access your personal information</li>
+                    <li>Request a copy of your data in a portable format</li>
+                    <li>View your test history and performance data</li>
+                </ul>
+
+                <h3>7.2 Correction and Update</h3>
+                <p>You can update your account information at any time through your profile settings.</p>
+
+                <h3>7.3 Deletion</h3>
+                <p>You have the right to request deletion of your account and associated data. Note that:</p>
+                <ul>
+                    <li>Some data may be retained for legal or security purposes</li>
+                    <li>Anonymized analytics data may be retained</li>
+                    <li>Deletion is permanent and cannot be undone</li>
+                </ul>
+
+                <h3>7.4 Opt-Out</h3>
+                <p>You can opt out of:</p>
+                <ul>
+                    <li>Marketing communications (while still receiving essential account notifications)</li>
+                    <li>Analytics tracking (where technically feasible)</li>
+                </ul>
+
+                <h3>7.5 Exercising Your Rights</h3>
+                <p>To exercise any of these rights, contact us at: <strong>privacy@tyaira.com</strong></p>
+            </section>
+
+            <section class="legal-section">
+                <h2>8. Data Retention</h2>
+                <p>We retain your information for as long as necessary to:</p>
+                <ul>
+                    <li><strong>Active Accounts:</strong> Data retained while your account is active</li>
+                    <li><strong>Inactive Accounts:</strong> May be deleted after 2 years of inactivity (with prior notice)</li>
+                    <li><strong>Test Results:</strong> Retained for the lifetime of your account</li>
+                    <li><strong>Payment Records:</strong> Retained for 7 years for tax and legal compliance</li>
+                    <li><strong>Activity Logs:</strong> Retained for 90 days for security purposes</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h2>9. Children's Privacy</h2>
+                <p>The Platform is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13. If we discover that we have collected information from a child under 13, we will delete it immediately.</p>
+                <p>Users between 13-18 should use the Platform with parental consent.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>10. International Data Transfers</h2>
+                <p>Your information may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place to protect your data in accordance with this Privacy Policy.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>11. Third-Party Links</h2>
+                <p>The Platform may contain links to third-party websites or services. We are not responsible for the privacy practices of these external sites. We encourage you to read their privacy policies.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>12. Data Breach Notification</h2>
+                <p>In the event of a data breach that affects your personal information, we will:</p>
+                <ul>
+                    <li>Notify affected users within 72 hours of discovery</li>
+                    <li>Describe the nature of the breach</li>
+                    <li>Explain steps we're taking to address it</li>
+                    <li>Provide guidance on protecting yourself</li>
+                    <li>Notify relevant authorities as required by law</li>
+                </ul>
+            </section>
+
+            <section class="legal-section">
+                <h2>13. Changes to This Privacy Policy</h2>
+                <p>We may update this Privacy Policy from time to time. Changes will be effective immediately upon posting. We will notify you of significant changes via:</p>
+                <ul>
+                    <li>Email notification to your registered address</li>
+                    <li>Prominent notice on the Platform</li>
+                    <li>Updated "Last Updated" date at the top of this policy</li>
+                </ul>
+                <p>Your continued use of the Platform after changes constitutes acceptance of the updated policy.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>14. Contact Us</h2>
+                <p>If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us:</p>
+                <div class="contact-info">
+                    <p><strong>Privacy Team:</strong> privacy@tyaira.com</p>
+                    <p><strong>General Support:</strong> support@tyaira.com</p>
+                    <p><strong>Platform:</strong> Tyaira Driving Test Platform</p>
+                </div>
+                <p>We will respond to your inquiry within 30 days.</p>
+            </section>
+
+            <section class="legal-section">
+                <h2>15. Compliance</h2>
+                <p>This Privacy Policy is designed to comply with:</p>
+                <ul>
+                    <li>General Data Protection Regulation (GDPR) - for EU users</li>
+                    <li>California Consumer Privacy Act (CCPA) - for California residents</li>
+                    <li>Other applicable data protection laws</li>
+                </ul>
+            </section>
+        </div>
+
+        <div class="legal-footer">
+            <p>By using the Tyaira Driving Test Platform, you acknowledge that you have read and understood this Privacy Policy.</p>
+            <div class="legal-actions">
+                <a href="{{ url_for('terms') }}" class="btn btn-secondary">View Terms & Conditions</a>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.legal-page {
+    min-height: 100vh;
+    background: #f7fafc;
+    padding: 2rem 0;
+}
+
+.legal-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.legal-header {
+    background: white;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.legal-header h1 {
+    font-size: 2.5rem;
+    color: #1a202c;
+    margin-bottom: 0.5rem;
+}
+
+.last-updated {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.legal-content {
+    background: white;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.legal-section {
+    margin-bottom: 3rem;
+}
+
+.legal-section:last-child {
+    margin-bottom: 0;
+}
+
+.legal-section h2 {
+    color: #2d3748;
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.legal-section h3 {
+    color: #4a5568;
+    font-size: 1.25rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.legal-section p {
+    color: #4a5568;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+
+.legal-section ul,
+.legal-section ol {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.legal-section li {
+    color: #4a5568;
+    line-height: 1.8;
+    margin-bottom: 0.5rem;
+}
+
+.legal-section strong {
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.legal-section a {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+.legal-section a:hover {
+    text-decoration: underline;
+}
+
+.contact-info {
+    background: #f7fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #4299e1;
+    margin-top: 1rem;
+}
+
+.contact-info p {
+    margin-bottom: 0.5rem;
+}
+
+.legal-footer {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.legal-footer p {
+    color: #4a5568;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.legal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .legal-container {
+        padding: 0 1rem;
+    }
+
+    .legal-header h1 {
+        font-size: 2rem;
+    }
+
+    .legal-content {
+        padding: 2rem 1.5rem;
+    }
+
+    .legal-section h2 {
+        font-size: 1.5rem;
+    }
+
+    .legal-actions {
+        flex-direction: column;
+    }
+
+    .legal-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

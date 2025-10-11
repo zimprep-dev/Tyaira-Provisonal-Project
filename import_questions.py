@@ -6,7 +6,8 @@ with all questions, options, and correct answers.
 """
 
 import re
-from app import app, db, Question, AnswerOption, TestCategory
+from app import app
+from models import db, Question, AnswerOption, TestCategory
 
 def parse_markdown_questions(file_path):
     """Parse the markdown file and extract questions with answers."""

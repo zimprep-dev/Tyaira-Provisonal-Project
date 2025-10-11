@@ -178,6 +178,29 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content small">
+        <div class="modal-header danger">
+            <h2><i data-feather="alert-triangle"></i> Delete Question</h2>
+            <button class="modal-close" onclick="hideDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="delete-warning">Are you sure you want to delete this question?</p>
+            <p class="delete-info">This action cannot be undone. The question and all its answer options will be permanently removed.</p>
+            <div class="question-preview" id="deleteQuestionPreview">
+                <!-- Question preview will be inserted here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideDeleteModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                <i data-feather="trash-2"></i> Delete Question
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Image Selector Modal -->
 <div id="imageSelectorModal" class="modal" style="display: none;">
     <div class="modal-content large">
@@ -297,15 +320,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    let deleteQuestionId = null;
+    let deleteQuestionElement = null;
+
     window.deleteQuestion = async (questionId, element) => {
-        if (!confirm('Are you sure you want to delete this question? This action cannot be undone.')) return;
+        deleteQuestionId = questionId;
+        deleteQuestionElement = element;
+        
+        // Get question details for preview
+        const card = element.closest('.question-card');
+        const questionText = card.querySelector('.question-text').textContent;
+        const questionCategory = card.querySelector('.question-category').textContent;
+        
+        // Show preview in modal
+        const preview = document.getElementById('deleteQuestionPreview');
+        preview.innerHTML = `
+            <div class="delete-question-info">
+                <span class="preview-category">${questionCategory}</span>
+                <p class="preview-text">${questionText}</p>
+            </div>
+        `;
+        
+        // Show modal
+        document.getElementById('deleteConfirmModal').style.display = 'flex';
+        if (window.feather) feather.replace();
+    };
+
+    window.hideDeleteModal = () => {
+        document.getElementById('deleteConfirmModal').style.display = 'none';
+        deleteQuestionId = null;
+        deleteQuestionElement = null;
+    };
+
+    window.confirmDelete = async () => {
+        if (!deleteQuestionId || !deleteQuestionElement) return;
+
+        // Disable button and show loading state
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i data-feather="loader"></i> Deleting...';
+        if (window.feather) feather.replace();
 
         try {
-            const response = await fetch(`/delete_question/${questionId}`, { method: 'DELETE' });
+            const response = await fetch(`/delete_question/${deleteQuestionId}`, { method: 'DELETE' });
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status} ${response.statusText}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response. Please check if you are logged in as admin.');
+            }
+            
             const data = await response.json();
 
             if (data.success) {
-                const card = element.closest('.question-card');
+                hideDeleteModal();
+                const card = deleteQuestionElement.closest('.question-card');
                 card.style.transition = 'opacity 0.5s ease';
                 card.style.opacity = '0';
                 setTimeout(() => {
@@ -316,7 +389,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Delete error:', error);
-            alert(`Delete failed: ${error.message}`);
+            
+            // Show error in modal instead of alert
+            const preview = document.getElementById('deleteQuestionPreview');
+            preview.innerHTML = `
+                <div class="delete-error">
+                    <i data-feather="alert-circle"></i>
+                    <p><strong>Delete Failed:</strong> ${error.message}</p>
+                </div>
+            `;
+            if (window.feather) feather.replace();
+            
+            // Re-enable button
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+            if (window.feather) feather.replace();
         }
     };
 
@@ -604,9 +691,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Close modal on escape key
+    // Connect delete confirm button
+    document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+
+    // Close modals on escape key
     document.addEventListener('keydown', (e) => {
-        if (e.key === "Escape") hideQuestionModal();
+        if (e.key === "Escape") {
+            hideQuestionModal();
+            hideDeleteModal();
+        }
     });
 });
 </script>

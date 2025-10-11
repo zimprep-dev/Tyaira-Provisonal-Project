@@ -1,5 +1,6 @@
 import re
-from app import app, db, Question, AnswerOption, TestCategory
+from app import app
+from models import db, Question, AnswerOption, TestCategory
 
 def parse_and_populate():
     """Parses the markdown file and populates the database."""

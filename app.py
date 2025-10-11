@@ -1,20 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from sqlalchemy import func, case
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import json
 import os
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import random
 import uuid
+from dotenv import load_dotenv
 from utils import is_mobile_device, get_device_type
+from models import db, User, TestResult, Answer, TestCategory, Question, AnswerOption, UploadedFile, TestSession, TestConfig, ActivityLog
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-change-this'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost:5432/tyaira'
+
+# Configuration from environment variables
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-this')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://postgres:1234@localhost:5432/tyaira')
+
+# Fix for Render's postgres:// vs postgresql:// URL format
+if app.config['SQLALCHEMY_DATABASE_URI'] and app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1)
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # File upload configuration
@@ -27,112 +39,12 @@ ALLOWED_PDF_EXTENSIONS = {'pdf'}
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'images'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'pdfs'), exist_ok=True)
 
-db = SQLAlchemy(app)
+# Initialize extensions
+db.init_app(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-
-# Database Models
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
-    is_subscriber = db.Column(db.Boolean, default=False)
-    subscription_date = db.Column(db.DateTime)
-    tests_taken = db.relationship('TestResult', backref='user', lazy=True)
-    downloads_count = db.Column(db.Integer, default=0)
-
-class TestResult(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    score = db.Column(db.Integer, nullable=False)
-    total_questions = db.Column(db.Integer, nullable=False)
-    test_date = db.Column(db.DateTime, default=datetime.utcnow)
-    time_taken = db.Column(db.Integer)  # in seconds
-    answers = db.relationship('Answer', backref='test_result', lazy=True, cascade="all, delete-orphan")
-
-class Answer(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    test_result_id = db.Column(db.Integer, db.ForeignKey('test_result.id'), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
-    user_answer = db.Column(db.String(1))  # The answer the user selected (e.g., 'A', 'B')
-    is_correct = db.Column(db.Boolean, nullable=False)
-
-    question = db.relationship('Question')
-
-class TestCategory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
-    description = db.Column(db.Text)
-    questions = db.relationship('Question', backref='category', lazy=True)
-
-class Question(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    question_text = db.Column(db.Text, nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('test_category.id'), nullable=False)
-    difficulty = db.Column(db.String(20), default='basic')
-    image_path = db.Column(db.String(200))
-    created_date = db.Column(db.DateTime, default=datetime.utcnow)
-    options = db.relationship('AnswerOption', backref='question', lazy=True, cascade="all, delete-orphan")
-    
-    def get_correct_option(self):
-        """Get the correct answer option for this question"""
-        for option in self.options:
-            if option.is_correct:
-                return option
-        return None
-    
-    def get_option_by_letter(self, letter):
-        """Get option by letter (A, B, C, D)"""
-        for option in self.options:
-            if option.option_letter.upper() == letter.upper():
-                return option
-        return None
-
-class AnswerOption(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
-    option_text = db.Column(db.String(255), nullable=False)
-    is_correct = db.Column(db.Boolean, default=False, nullable=False)
-    option_letter = db.Column(db.String(1), nullable=False) # A, B, C, D
-
-class UploadedFile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(200), nullable=False)
-    original_filename = db.Column(db.String(200), nullable=False)
-    file_path = db.Column(db.String(300), nullable=False)
-    file_type = db.Column(db.String(20), nullable=False)  # 'image' or 'pdf'
-    file_size = db.Column(db.Integer, nullable=False)
-    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
-    uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-# Track active test sessions (lightweight)
-class TestSession(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
-    question_ids = db.Column(db.Text)  # JSON list of question IDs
-    time_limit_seconds = db.Column(db.Integer, default=30 * 60)
-
-class TestConfig(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
-    num_questions = db.Column(db.Integer, default=25, nullable=False)
-    time_limit = db.Column(db.Integer, default=30, nullable=False) # In minutes
-    categories = db.Column(db.Text) # JSON list of categories
-    difficulty_distribution = db.Column(db.Text) # JSON object for difficulty percentages
-
-class ActivityLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    username = db.Column(db.String(80))
-    description = db.Column(db.Text, nullable=False)
-
-    user = db.relationship('User', backref='activity_logs')
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -171,48 +83,18 @@ def create_admin_user():
         db.session.commit()
         print("Admin user created: username='admin', password='admin123'")
 
-# Load sample questions
-def load_questions():
-    if not Question.query.first():
-        sample_questions = [
-            {
-                "question_text": "What should you do when approaching a red traffic light?",
-                "option_a": "Speed up to get through quickly",
-                "option_b": "Stop and wait for green light",
-                "option_c": "Ignore the light if no cars are coming",
-                "correct_answer": "B",
-                "category": "Traffic Signs"
-            },
-            {
-                "question_text": "What is the speed limit in a residential area?",
-                "option_a": "60 km/h",
-                "option_b": "80 km/h", 
-                "option_c": "40 km/h",
-                "correct_answer": "C",
-                "category": "Speed Limits"
-            },
-
-            {
-                "question_text": "When should you use your hazard lights?",
-                "option_a": "When driving in rain",
-                "option_b": "When your car breaks down",
-                "option_c": "When you're in a hurry",
-                "correct_answer": "B",
-                "category": "Safety"
-
-            },  
-        ]
-        
-        for q_data in sample_questions:
-            question = Question(**q_data)
-            db.session.add(question)
-        
-        db.session.commit()
-
 # Routes
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -280,7 +162,7 @@ def take_test():
 @login_required
 def test_interface(category):
     # Check if user can take test (free tier limit)
-    if not current_user.is_subscriber and len(current_user.tests_taken) >= 10:
+    if not current_user.has_active_subscription() and len(current_user.tests_taken) >= 10:
         flash('You have reached your limit of 10 free tests. Please subscribe for unlimited access.')
         return redirect(url_for('dashboard'))
     
@@ -373,16 +255,39 @@ def submit_test():
 def subscribe():
     current_user.is_subscriber = True
     current_user.subscription_date = datetime.utcnow()
+    # Set subscription end date to 30 days from now (monthly subscription)
+    current_user.subscription_end_date = datetime.utcnow() + relativedelta(months=1)
     db.session.commit()
     flash('Subscription activated! You now have unlimited access.')
     return redirect(url_for('dashboard'))
+
+@app.route('/cancel_subscription', methods=['POST'])
+@login_required
+def cancel_subscription():
+    if not current_user.is_subscriber:
+        flash('You do not have an active subscription.')
+        return redirect(url_for('dashboard'))
+    
+    # Cancel subscription but keep end date for grace period
+    current_user.is_subscriber = False
+    # Keep subscription_date and subscription_end_date for grace period access
+    db.session.commit()
+    
+    if current_user.subscription_end_date:
+        end_date_str = current_user.subscription_end_date.strftime('%B %d, %Y')
+        flash(f'Your subscription has been cancelled. You will retain premium access until {end_date_str}.')
+    else:
+        flash('Your subscription has been cancelled.')
+    
+    return redirect(url_for('profile'))
 
 @app.route('/download_pdf/<int:file_id>')
 @login_required
 def download_pdf(file_id):
     # Check if user has downloads left or is a subscriber
-    if not current_user.is_subscriber and current_user.downloads_count >= 3:
-        flash('Download limit reached. Subscribe for unlimited downloads.')
+    FREE_DOWNLOAD_LIMIT = 3
+    if not current_user.has_active_subscription() and current_user.downloads_count >= FREE_DOWNLOAD_LIMIT:
+        flash(f'You have reached the free tier limit of {FREE_DOWNLOAD_LIMIT} downloads. Subscribe for unlimited downloads!', 'error')
         return redirect(url_for('dashboard'))
 
     file_to_download = UploadedFile.query.get_or_404(file_id)
@@ -392,9 +297,15 @@ def download_pdf(file_id):
         return redirect(url_for('dashboard'))
 
     # Increment download count for free users
-    if not current_user.is_subscriber:
+    if not current_user.has_active_subscription():
         current_user.downloads_count += 1
         db.session.commit()
+        
+        # Show warning when approaching limit
+        if current_user.downloads_count == 2:
+            flash('You have 1 download remaining. Subscribe for unlimited downloads!', 'warning')
+        elif current_user.downloads_count >= 3:
+            flash('You have used all your free downloads. Subscribe for unlimited access!', 'warning')
     
     # Send the file for download
     return send_from_directory(
@@ -454,14 +365,16 @@ def admin_analytics():
 
     # Performance by category
     category_performance_raw = db.session.query(
-        Question.category,
+        TestCategory.name,
         func.count(Answer.id).label('total'),
         func.sum(case((Answer.is_correct, 1), else_=0)).label('correct')
-    ).join(Answer, Answer.question_id == Question.id).group_by(Question.category).all()
+    ).join(Question, Question.category_id == TestCategory.id
+    ).join(Answer, Answer.question_id == Question.id
+    ).group_by(TestCategory.name).all()
 
     category_performance = {
-        cat: round((correct / total) * 100, 2) if total > 0 else 0
-        for cat, total, correct in category_performance_raw
+        cat_name: round((correct / total) * 100, 2) if total > 0 else 0
+        for cat_name, total, correct in category_performance_raw
     }
 
     # Performance Trend (last 30 days)
@@ -487,6 +400,69 @@ def admin_analytics():
     }
     
     return render_template('admin_analytics.html', data=analytics_data)
+
+@app.route('/admin/users')
+@login_required
+def admin_users():
+    if current_user.username != 'admin':
+        flash('Access denied.')
+        return redirect(url_for('dashboard'))
+    
+    # Get all users with their test statistics
+    users = User.query.all()
+    
+    user_data = []
+    for user in users:
+        # Calculate user statistics
+        tests_taken = TestResult.query.filter_by(user_id=user.id).count()
+        
+        if tests_taken > 0:
+            # Average score
+            avg_score_raw = db.session.query(
+                func.avg(TestResult.score * 100.0 / TestResult.total_questions)
+            ).filter(TestResult.user_id == user.id).scalar()
+            avg_score = round(avg_score_raw, 2) if avg_score_raw else 0
+            
+            # Best score
+            best_result = db.session.query(
+                func.max(TestResult.score * 100.0 / TestResult.total_questions)
+            ).filter(TestResult.user_id == user.id).scalar()
+            best_score = round(best_result, 2) if best_result else 0
+            
+            # Last test date
+            last_test = TestResult.query.filter_by(user_id=user.id).order_by(TestResult.test_date.desc()).first()
+            last_test_date = last_test.test_date if last_test else None
+        else:
+            avg_score = 0
+            best_score = 0
+            last_test_date = None
+        
+        user_data.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_subscriber': user.is_subscriber,
+            'subscription_date': user.subscription_date,
+            'tests_taken': tests_taken,
+            'avg_score': avg_score,
+            'best_score': best_score,
+            'downloads_count': user.downloads_count,
+            'last_test_date': last_test_date
+        })
+    
+    # Sort by tests taken (most active first)
+    user_data.sort(key=lambda x: x['tests_taken'], reverse=True)
+    
+    # Summary statistics
+    summary = {
+        'total_users': len(users),
+        'premium_users': sum(1 for u in user_data if u['is_subscriber']),
+        'free_users': sum(1 for u in user_data if not u['is_subscriber']),
+        'active_users': sum(1 for u in user_data if u['tests_taken'] > 0),
+        'inactive_users': sum(1 for u in user_data if u['tests_taken'] == 0)
+    }
+    
+    return render_template('admin_users.html', users=user_data, summary=summary)
 
 @app.route('/admin')
 @login_required
@@ -692,6 +668,18 @@ def uploaded_file(filename):
 @app.route('/api/test/start/<category>')
 @login_required
 def api_test_start(category):
+    # Check free tier limit (10 tests)
+    FREE_TEST_LIMIT = 10
+    if not current_user.has_active_subscription():
+        tests_taken_count = TestResult.query.filter_by(user_id=current_user.id).count()
+        if tests_taken_count >= FREE_TEST_LIMIT:
+            return jsonify({
+                'error': 'free_limit_reached',
+                'message': f'You have reached the free tier limit of {FREE_TEST_LIMIT} tests. Subscribe for unlimited access!',
+                'tests_taken': tests_taken_count,
+                'limit': FREE_TEST_LIMIT
+            }), 403
+    
     # Defaults; later can be sourced from TestConfig
     question_count = 25
     time_limit_seconds = 8 * 60
@@ -1075,7 +1063,6 @@ def init_db_command():
     """Creates the database tables and populates them with initial data."""
     db.create_all()
     create_admin_user()
-    load_questions()
     print("Database initialized.")
 
 if __name__ == '__main__':

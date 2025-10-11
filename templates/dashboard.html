@@ -7,8 +7,12 @@
     <div class="dashboard-header">
         <h1><i data-feather="user" class="dashboard-icon"></i> Welcome, {{ user.username }}!</h1>
         <div class="user-status">
-            {% if user.is_subscriber %}
-                <span class="status-badge subscribed"><i data-feather="star" class="badge-icon"></i> Premium Subscriber</span>
+            {% if user.has_active_subscription() %}
+                {% if user.is_subscriber %}
+                    <span class="status-badge subscribed"><i data-feather="star" class="badge-icon"></i> Premium Subscriber</span>
+                {% else %}
+                    <span class="status-badge subscribed"><i data-feather="star" class="badge-icon"></i> Premium (Cancelled)</span>
+                {% endif %}
             {% else %}
                 <span class="status-badge free"><i data-feather="user" class="badge-icon"></i> Free Tier</span>
             {% endif %}
@@ -21,13 +25,13 @@
             <div class="stat-number">{{ user.tests_taken|length }}</div>
         </div>
         <div class="stat-card">
-            <h3><i data-feather="download" class="stat-icon"></i> Downloads Used</h3>
-            <div class="stat-number">{{ user.downloads_count }}/3</div>
+            <h3><i data-feather="download" class="stat-icon"></i> Downloads</h3>
+            <div class="stat-number">{{ user.downloads_count }}</div>
         </div>
-        {% if user.is_subscriber %}
+        {% if user.has_active_subscription() %}
             <div class="stat-card">
                 <h3><i data-feather="star" class="stat-icon"></i> Subscription</h3>
-                <div class="stat-number">Active</div>
+                <div class="stat-number">{% if user.is_subscriber %}Active{% else %}Ending Soon{% endif %}</div>
             </div>
         {% endif %}
     </div>
@@ -45,7 +49,7 @@
             <button id="downloadResourcesBtn" class="btn btn-secondary">Download PDF</button>
         </div>
         
-        {% if not user.is_subscriber %}
+        {% if not user.has_active_subscription() %}
         <div class="action-card featured">
             <h3><i data-feather="zap" class="action-icon"></i> Upgrade to Premium</h3>
             <p>Get unlimited access for just $3/month</p>

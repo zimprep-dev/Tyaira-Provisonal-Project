@@ -3,7 +3,8 @@
 Simple test script to verify the API endpoint works correctly.
 """
 
-from app import app, db, Question, TestCategory
+from app import app
+from models import db, Question, TestCategory
 import json
 
 def test_api():

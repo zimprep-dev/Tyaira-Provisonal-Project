@@ -97,11 +97,6 @@
                         <i data-feather="arrow-left"></i> Previous
                     </button>
                 </div>
-                <div class="nav-center">
-                    <button class="btn btn-outline-secondary" id="flagBtn">
-                        <i data-feather="flag"></i> Flag for Review
-                    </button>
-                </div>
                 <div class="nav-right">
                     <button class="btn btn-primary" id="nextBtn">
                         Next <i data-feather="arrow-right"></i>
@@ -124,10 +119,6 @@
             <div class="legend-item">
                 <div class="legend-color answered"></div>
                 <span>Answered</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color flagged"></div>
-                <span>Flagged</span>
             </div>
             <div class="legend-item">
                 <div class="legend-color current"></div>
@@ -207,10 +198,6 @@
                     <span class="stat-value" id="answeredCount">0</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Questions Flagged:</span>
-                    <span class="stat-value" id="flaggedCount">0</span>
-                </div>
-                <div class="stat-item">
                     <span class="stat-label">Time Used:</span>
                     <span class="stat-value" id="timeUsed">0:00</span>
                 </div>
@@ -272,7 +259,6 @@
         if (e.key >= '1' && e.key <= '4') testInterface.selectOption(['A', 'B', 'C', 'D'][parseInt(e.key) - 1]);
         else if (e.key === 'ArrowLeft') { e.preventDefault(); testInterface.previousQuestion(); }
         else if (e.key === 'ArrowRight') { e.preventDefault(); testInterface.nextQuestion(); }
-        else if (e.key.toLowerCase() === 'f') { e.preventDefault(); testInterface.flagQuestion(); }
     });
 </script>
 {% endblock %}

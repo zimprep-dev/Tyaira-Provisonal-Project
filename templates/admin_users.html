@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - CMS{% endblock %}
+
+{% block content %}
+<div class="cms-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i data-feather="users"></i> User Management</h1>
+            <p>View and manage user accounts, subscriptions, and activity</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+                <i data-feather="arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon"><i data-feather="users"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ summary.total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+        <div class="stat-card premium">
+            <div class="stat-icon"><i data-feather="star"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ summary.premium_users }}</div>
+                <div class="stat-label">Premium Users</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i data-feather="user"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ summary.free_users }}</div>
+                <div class="stat-label">Free Users</div>
+            </div>
+        </div>
+        <div class="stat-card active">
+            <div class="stat-icon"><i data-feather="activity"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ summary.active_users }}</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+        </div>
+        <div class="stat-card inactive">
+            <div class="stat-icon"><i data-feather="user-x"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ summary.inactive_users }}</div>
+                <div class="stat-label">Inactive Users</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="users-table-container">
+        <div class="table-header">
+            <h2><i data-feather="list"></i> All Users</h2>
+            <div class="table-filters">
+                <input type="text" id="searchUsers" placeholder="Search users..." class="search-input">
+                <select id="filterSubscription" class="filter-select">
+                    <option value="all">All Users</option>
+                    <option value="premium">Premium Only</option>
+                    <option value="free">Free Only</option>
+                </select>
+                <select id="filterActivity" class="filter-select">
+                    <option value="all">All Activity</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="users-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Tests Taken</th>
+                        <th>Avg Score</th>
+                        <th>Best Score</th>
+                        <th>Downloads</th>
+                        <th>Last Active</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr class="user-row" 
+                        data-subscription="{{ 'premium' if user.is_subscriber else 'free' }}"
+                        data-activity="{{ 'active' if user.tests_taken > 0 else 'inactive' }}"
+                        data-username="{{ user.username.lower() }}"
+                        data-email="{{ user.email.lower() }}">
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">{{ user.username[0].upper() }}</div>
+                                <div class="user-details">
+                                    <span class="user-name">{{ user.username }}</span>
+                                    {% if user.username == 'admin' %}
+                                    <span class="badge badge-admin">Admin</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.is_subscriber %}
+                            <span class="badge badge-premium"><i data-feather="star"></i> Premium</span>
+                            {% else %}
+                            <span class="badge badge-free">Free</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="stat-value">{{ user.tests_taken }}</span>
+                        </td>
+                        <td>
+                            {% if user.tests_taken > 0 %}
+                            <span class="score-badge {% if user.avg_score >= 80 %}pass{% elif user.avg_score >= 50 %}average{% else %}fail{% endif %}">
+                                {{ user.avg_score }}%
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.tests_taken > 0 %}
+                            <span class="score-badge {% if user.best_score >= 80 %}pass{% elif user.best_score >= 50 %}average{% else %}fail{% endif %}">
+                                {{ user.best_score }}%
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="stat-value">{{ user.downloads_count }}</span>
+                        </td>
+                        <td>
+                            {% if user.last_test_date %}
+                            <span class="date-text">{{ user.last_test_date.strftime('%b %d, %Y') }}</span>
+                            {% else %}
+                            <span class="text-muted">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-icon" onclick="viewUserDetails({{ user.id }})" title="View Details">
+                                    <i data-feather="eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer">
+            <p class="results-count">Showing <span id="visibleCount">{{ users|length }}</span> of {{ users|length }} users</p>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div id="userDetailsModal" class="modal" style="display: none;">
+    <div class="modal-content medium">
+        <div class="modal-header">
+            <h2><i data-feather="user"></i> User Details</h2>
+            <button class="modal-close" onclick="hideUserDetailsModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="userDetailsContent">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    feather.replace();
+
+    // Search functionality
+    const searchInput = document.getElementById('searchUsers');
+    const subscriptionFilter = document.getElementById('filterSubscription');
+    const activityFilter = document.getElementById('filterActivity');
+    const userRows = document.querySelectorAll('.user-row');
+    const visibleCount = document.getElementById('visibleCount');
+
+    function filterUsers() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const subscriptionValue = subscriptionFilter.value;
+        const activityValue = activityFilter.value;
+        let visible = 0;
+
+        userRows.forEach(row => {
+            const username = row.dataset.username;
+            const email = row.dataset.email;
+            const subscription = row.dataset.subscription;
+            const activity = row.dataset.activity;
+
+            const matchesSearch = username.includes(searchTerm) || email.includes(searchTerm);
+            const matchesSubscription = subscriptionValue === 'all' || subscription === subscriptionValue;
+            const matchesActivity = activityValue === 'all' || activity === activityValue;
+
+            if (matchesSearch && matchesSubscription && matchesActivity) {
+                row.style.display = '';
+                visible++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        visibleCount.textContent = visible;
+    }
+
+    searchInput.addEventListener('input', filterUsers);
+    subscriptionFilter.addEventListener('change', filterUsers);
+    activityFilter.addEventListener('change', filterUsers);
+
+    // View user details
+    window.viewUserDetails = (userId) => {
+        // In a real implementation, fetch user details via API
+        alert(`View details for user ID: ${userId}\n\nThis feature can be expanded to show:\n- Full test history\n- Score trends\n- Activity timeline\n- Subscription management`);
+    };
+
+    window.hideUserDetailsModal = () => {
+        document.getElementById('userDetailsModal').style.display = 'none';
+    };
+});
+</script>
+
+<style>
+/* User Management Specific Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card.premium {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stat-card.premium .stat-icon,
+.stat-card.premium .stat-number,
+.stat-card.premium .stat-label {
+    color: white;
+}
+
+.stat-card.active {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.stat-card.active .stat-icon,
+.stat-card.active .stat-number,
+.stat-card.active .stat-label {
+    color: white;
+}
+
+.stat-card.inactive {
+    background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+    color: white;
+}
+
+.stat-card.inactive .stat-icon,
+.stat-card.inactive .stat-number,
+.stat-card.inactive .stat-label {
+    color: white;
+}
+
+.users-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.table-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.table-header h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.table-filters {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.search-input,
+.filter-select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.search-input {
+    min-width: 200px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table thead {
+    background: #f7fafc;
+}
+
+.users-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.users-table td {
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.users-table tbody tr:hover {
+    background: #f7fafc;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.125rem;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-premium {
+    background: #faf089;
+    color: #744210;
+}
+
+.badge-free {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.badge-admin {
+    background: #fc8181;
+    color: #742a2a;
+}
+
+.score-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.score-badge.pass {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.score-badge.average {
+    background: #feebc8;
+    color: #7c2d12;
+}
+
+.score-badge.fail {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.date-text {
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.text-muted {
+    color: #a0aec0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    border: none;
+    background: #edf2f7;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.btn-icon i {
+    width: 16px;
+    height: 16px;
+}
+
+.table-footer {
+    padding: 1rem 2rem;
+    border-top: 1px solid #e2e8f0;
+    background: #f7fafc;
+}
+
+.results-count {
+    margin: 0;
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.results-count span {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+@media (max-width: 768px) {
+    .table-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .table-filters {
+        flex-direction: column;
+    }
+
+    .search-input,
+    .filter-select {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

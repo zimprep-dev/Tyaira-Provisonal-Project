@@ -6,8 +6,8 @@
     <title>{% block title %}Driver Testing Platform{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pagination.css') }}">
-    <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Feather Icons (Local) -->
+    <script src="{{ url_for('static', filename='js/feather.min.js') }}"></script>
     {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -55,11 +55,29 @@
     </nav>
 
     <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        {% for category, message in messages %}
+                            showToast('{{ message }}', '{{ category if category != "message" else "info" }}');
+                        {% endfor %}
+                    });
+                </script>
+            {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </main>
 
     <footer class="footer">
-        <p>&copy; 2024 Driver Testing Platform - Zimbabwe</p>
+        <div class="footer-content">
+            <p>&copy; 2025 Tyaira Driver Testing Platform - Zimbabwe</p>
+            <div class="footer-links">
+                <a href="{{ url_for('terms') }}">Terms & Conditions</a>
+                <span class="separator">|</span>
+                <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+            </div>
+        </div>
     </footer>
     <script>
       document.addEventListener('DOMContentLoaded', function(){

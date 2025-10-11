@@ -1,7 +1,6 @@
 const testInterface = {
     questions: [],
     userAnswers: {},
-    flaggedQuestions: new Set(),
     currentQuestionIndex: 0,
     sessionId: null,
     timerInterval: null,
@@ -13,13 +12,40 @@ const testInterface = {
 
         try {
             const response = await fetch(`/api/test/start/${category}`);
-            if (!response.ok) throw new Error('Failed to start test.');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                
+                // Check if it's a free tier limit error
+                if (errorData.error === 'free_limit_reached') {
+                    // Show toast notification
+                    if (window.showToast) {
+                        showToast(errorData.message, 'error');
+                    }
+                    
+                    // Redirect to dashboard after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 3000);
+                    
+                    document.getElementById('questionText').innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <h3 style="color: #dc3545; margin-bottom: 1rem;">Free Tier Limit Reached</h3>
+                            <p>${errorData.message}</p>
+                            <a href="/subscribe" class="btn btn-primary" style="margin-top: 1rem;">Subscribe Now</a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                throw new Error('Failed to start test.');
+            }
+            
             const data = await response.json();
 
             this.questions = data.questions;
             this.sessionId = data.session_id;
             this.userAnswers = {};
-            this.flaggedQuestions.clear();
             this.currentQuestionIndex = 0;
 
             document.getElementById('totalQuestions').textContent = this.questions.length;
@@ -112,13 +138,10 @@ const testInterface = {
     updateNavigatorHighlight() {
         document.querySelectorAll('.grid-item').forEach(item => {
             const index = parseInt(item.dataset.index, 10);
-            item.classList.remove('current', 'answered', 'flagged');
+            item.classList.remove('current', 'answered');
 
             if (this.userAnswers[this.questions[index].id]) {
                 item.classList.add('answered');
-            }
-            if (this.flaggedQuestions.has(this.questions[index].id)) {
-                item.classList.add('flagged');
             }
             if (index === this.currentQuestionIndex) {
                 item.classList.add('current');
@@ -149,16 +172,6 @@ const testInterface = {
         const questionId = this.questions[this.currentQuestionIndex].id;
         this.userAnswers[questionId] = option;
         document.querySelector(`input[name='answer'][value='${option}']`).checked = true;
-        this.updateNavigatorHighlight();
-    },
-
-    flagQuestion() {
-        const questionId = this.questions[this.currentQuestionIndex].id;
-        if (this.flaggedQuestions.has(questionId)) {
-            this.flaggedQuestions.delete(questionId);
-        } else {
-            this.flaggedQuestions.add(questionId);
-        }
         this.updateNavigatorHighlight();
     },
 
@@ -211,13 +224,11 @@ const testInterface = {
     finishTest() {
         // This function now just shows the confirmation modal
         const answeredCount = Object.keys(this.userAnswers).length;
-        const flaggedCount = this.flaggedQuestions.size;
         const timeElapsed = Math.floor((Date.now() - this.startTime) / 1000);
         const minutes = Math.floor(timeElapsed / 60);
         const seconds = timeElapsed % 60;
 
         document.getElementById('answeredCount').textContent = `${answeredCount} / ${this.questions.length}`;
-        document.getElementById('flaggedCount').textContent = flaggedCount;
         document.getElementById('timeUsed').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
         document.getElementById('completionModal').style.display = 'flex';
@@ -251,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Main test controls
     document.getElementById('nextBtn').addEventListener('click', () => testInterface.nextQuestion());
     document.getElementById('prevBtn').addEventListener('click', () => testInterface.previousQuestion());
-    document.getElementById('flagBtn').addEventListener('click', () => testInterface.flagQuestion());
     document.getElementById('finishBtn').addEventListener('click', () => testInterface.finishTest());
 
     // Radio button selection

@@ -42,10 +42,6 @@
     </div>
 
     <div class="charts-container">
-        <div class="chart-card chart-card-full">
-            <h3>Performance Trend</h3>
-            <canvas id="performanceTrendChart"></canvas>
-        </div>
         <div class="charts-row">
             <div class="chart-card">
                 <h3>Pass vs. Fail Rate</h3>
@@ -66,42 +62,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const analyticsDataEl = document.getElementById('analytics-data');
     const analyticsData = JSON.parse(analyticsDataEl.dataset.analytics);
-
-    // Performance Trend Chart
-    if (document.getElementById('performanceTrendChart')) {
-        const trendCtx = document.getElementById('performanceTrendChart').getContext('2d');
-        const trendLabels = analyticsData.performance_trend ? analyticsData.performance_trend.labels : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        const trendData = analyticsData.performance_trend ? analyticsData.performance_trend.data : [65, 59, 80, 81, 56, 55];
-
-        new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: trendLabels,
-                datasets: [{
-                    label: 'Average Score Over Time',
-                    data: trendData,
-                    borderColor: '#4a5568',
-                    backgroundColor: 'rgba(74, 85, 104, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
-    }
 
     // Pass/Fail Chart
     if (document.getElementById('passFailChart')) {

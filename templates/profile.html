@@ -35,6 +35,15 @@
                         {% endif %}
                     </span>
                 </div>
+                
+                {% if user.is_subscriber %}
+                <div class="info-group subscription-actions">
+                    <label>Subscription Management</label>
+                    <button class="btn btn-danger btn-sm" onclick="showCancelModal()">
+                        <i data-feather="x-circle"></i> Cancel Subscription
+                    </button>
+                </div>
+                {% endif %}
                 <div class="info-group">
                     <label>Member Since</label>
                     <span>
@@ -47,7 +56,7 @@
                 </div>
             </div>
             
-            {% if not user.is_subscriber %}
+            {% if not user.has_active_subscription() %}
             <div class="upgrade-section">
                 <h3>Upgrade to Premium</h3>
                 <p>Get unlimited access to tests and downloads for just $3/month</p>
@@ -70,8 +79,8 @@
                 <div class="stat-item">
                     <div class="stat-icon"><i data-feather="book"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number">{{ user.downloads_count }}/3</div>
-                        <div class="stat-label">Downloads Used</div>
+                        <div class="stat-number">{{ user.downloads_count }}</div>
+                        <div class="stat-label">Downloads</div>
                     </div>
                 </div>
                 <div class="stat-item">
@@ -148,26 +157,8 @@
             </div>
             {% endif %}
         </div>
-
-        <!-- Performance Chart -->
-        {% if user.tests_taken|length > 1 %}
-        <div class="profile-section">
-            <h2>Performance Trend</h2>
-            <div class="chart-container">
-                <canvas id="performanceChart" width="400" height="200"></canvas>
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
-
-{% if user.tests_taken|length > 1 %}
-    {% set ns = namespace(dates=[]) %}
-    {% for t in user.tests_taken %}
-        {% set _ = ns.dates.append(t.test_date.strftime('%m-%d') if t.test_date else '') %}
-    {% endfor %}
-    <script id="chart-data" type="application/json">{"scores": {{ user.tests_taken|map(attribute='score')|list|tojson }}, "dates": {{ ns.dates|tojson }}}</script>
-{% endif %}
 
 <script>
 function filterTests(filter) {
@@ -197,44 +188,112 @@ function filterTests(filter) {
     items.forEach(item => historyList.appendChild(item));
 }
 
-// Performance Chart (if Chart.js is available)
-if (typeof Chart !== 'undefined' && document.getElementById('performanceChart')) {
-    const ctx = document.getElementById('performanceChart').getContext('2d');
-    let testData = [];
-    let testDates = [];
-    const dataEl = document.getElementById('chart-data');
-    if (dataEl) {
-        try {
-            const parsed = JSON.parse(dataEl.textContent);
-            testData = parsed.scores || [];
-            testDates = parsed.dates || [];
-        } catch (e) {
-            console.error('Failed to parse chart data', e);
-        }
-    }
+function showCancelModal() {
+    document.getElementById('cancelSubscriptionModal').style.display = 'flex';
+    if (window.feather) feather.replace();
+}
 
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: testDates,
-            datasets: [{
-                label: 'Test Scores',
-                data: testData,
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 5
-                }
-            }
-        }
-    });
+function hideCancelModal() {
+    document.getElementById('cancelSubscriptionModal').style.display = 'none';
+}
+
+function confirmCancelSubscription() {
+    const form = document.getElementById('cancelSubscriptionForm');
+    form.submit();
 }
 </script>
+
+<!-- Cancel Subscription Modal -->
+<div id="cancelSubscriptionModal" class="modal" style="display: none;">
+    <div class="modal-content small">
+        <div class="modal-header danger">
+            <h2><i data-feather="alert-triangle"></i> Cancel Subscription</h2>
+            <button class="modal-close" onclick="hideCancelModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="cancel-warning">Are you sure you want to cancel your premium subscription?</p>
+            <div class="cancel-info-box">
+                <h4>What happens when you cancel:</h4>
+                <ul>
+                    <li><i data-feather="check"></i> You'll retain premium access until the end of your current billing period</li>
+                    <li><i data-feather="x"></i> No refunds will be issued for the current month</li>
+                    <li><i data-feather="x"></i> After cancellation, you'll return to the Free Tier</li>
+                    <li><i data-feather="info"></i> You can resubscribe at any time</li>
+                </ul>
+            </div>
+            <p class="cancel-note"><strong>Note:</strong> This action cannot be undone. Your subscription will not auto-renew.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideCancelModal()">Keep Subscription</button>
+            <form id="cancelSubscriptionForm" method="POST" action="{{ url_for('cancel_subscription') }}" style="display: inline;">
+                <button type="submit" class="btn btn-danger">
+                    <i data-feather="x-circle"></i> Cancel Subscription
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.subscription-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.cancel-warning {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 1.5rem;
+}
+
+.cancel-info-box {
+    background: #fff5f5;
+    border-left: 4px solid #dc3545;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.cancel-info-box h4 {
+    color: #2d3748;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.cancel-info-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.cancel-info-box li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    color: #4a5568;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.cancel-info-box li:last-child {
+    margin-bottom: 0;
+}
+
+.cancel-info-box li i {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.cancel-note {
+    color: #718096;
+    font-size: 0.9375rem;
+    margin: 0;
+}
+
+.cancel-note strong {
+    color: #2d3748;
+}
+</style>
 {% endblock %}
