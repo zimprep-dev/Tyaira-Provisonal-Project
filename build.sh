@@ -39,4 +39,20 @@ with app.app_context():
         print('ℹ️  Admin user already exists.')
 "
 
+# Import questions (if not already imported)
+echo "📚 Importing driving test questions..."
+python -c "
+from app import app, db
+from models import Question
+
+with app.app_context():
+    question_count = Question.query.count()
+    if question_count == 0:
+        print('📥 No questions found. Running import script...')
+        import subprocess
+        subprocess.run(['python', 'import_questions.py'])
+    else:
+        print(f'ℹ️  Database already has {question_count} questions. Skipping import.')
+"
+
 echo "✅ Build completed successfully!"
