@@ -64,7 +64,7 @@ In the **Environment** section, add:
 |-----|-------|
 | `SECRET_KEY` | Click "Generate" or use a random string |
 | `DATABASE_URL` | Paste the Internal Database URL from Step 3 |
-| `PYTHON_VERSION` | `3.11.5` |
+| `PYTHON_VERSION` | `3.11.9` |
 
 #### Step 6: Deploy
 1. Click **"Create Web Service"**
