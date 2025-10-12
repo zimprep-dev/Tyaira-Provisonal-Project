@@ -1,20 +1,11 @@
 #!/usr/bin/env bash
-# exit on error
 set -o errexit
 
-echo "Starting build process..."
-
-# Install dependencies
-echo "Installing dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Run database migrations
-echo "Running database migrations..."
 flask db upgrade
 
-# Create admin user (if not exists)
-echo "Creating admin user..."
 python -c "
 from app import app, db
 from models import User
@@ -32,15 +23,12 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
         print('Admin user created successfully!')
-        print('   Username: admin')
-        print('   Password: admin123')
-        print('   WARNING: CHANGE THIS PASSWORD AFTER FIRST LOGIN!')
+        print('Username: admin')
+        print('Password: admin123')
     else:
         print('Admin user already exists.')
 "
 
-# Import questions (if not already imported)
-echo "Importing driving test questions..."
 python -c "
 from app import app, db
 from models import Question
@@ -54,5 +42,3 @@ with app.app_context():
     else:
         print(f'Database already has {question_count} questions. Skipping import.')
 "
-
-echo "Build completed successfully!"
