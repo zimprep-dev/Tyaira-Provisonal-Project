@@ -2,19 +2,19 @@
 # exit on error
 set -o errexit
 
-echo "🚀 Starting build process..."
+echo "Starting build process..."
 
 # Install dependencies
-echo "📦 Installing dependencies..."
+echo "Installing dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
 # Run database migrations
-echo "🗄️ Running database migrations..."
+echo "Running database migrations..."
 flask db upgrade
 
 # Create admin user (if not exists)
-echo "👤 Creating admin user..."
+echo "Creating admin user..."
 python -c "
 from app import app, db
 from models import User
@@ -31,16 +31,16 @@ with app.app_context():
         )
         db.session.add(admin)
         db.session.commit()
-        print('✅ Admin user created successfully!')
+        print('Admin user created successfully!')
         print('   Username: admin')
         print('   Password: admin123')
-        print('   ⚠️  CHANGE THIS PASSWORD AFTER FIRST LOGIN!')
+        print('   WARNING: CHANGE THIS PASSWORD AFTER FIRST LOGIN!')
     else:
-        print('ℹ️  Admin user already exists.')
+        print('Admin user already exists.')
 "
 
 # Import questions (if not already imported)
-echo "📚 Importing driving test questions..."
+echo "Importing driving test questions..."
 python -c "
 from app import app, db
 from models import Question
@@ -48,11 +48,11 @@ from models import Question
 with app.app_context():
     question_count = Question.query.count()
     if question_count == 0:
-        print('📥 No questions found. Running import script...')
+        print('No questions found. Running import script...')
         import subprocess
         subprocess.run(['python', 'import_questions.py'])
     else:
-        print(f'ℹ️  Database already has {question_count} questions. Skipping import.')
+        print(f'Database already has {question_count} questions. Skipping import.')
 "
 
-echo "✅ Build completed successfully!"
+echo "Build completed successfully!"
