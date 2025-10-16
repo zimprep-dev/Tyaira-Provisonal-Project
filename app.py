@@ -4,7 +4,8 @@ from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Question, AnswerOption, TestResult, Answer, TestCategory, UploadedFile, TestSession, TestConfig, ActivityLog, SubscriptionPlan, PendingPayment, Transaction
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from dateutil.relativedelta import relativedelta
 import random
 import json
 import os
@@ -250,16 +251,7 @@ def submit_test():
         'test_result_id': test_result.id  # Return the ID for the review link
     })
 
-@app.route('/subscribe')
-@login_required
-def subscribe():
-    current_user.is_subscriber = True
-    current_user.subscription_date = datetime.utcnow()
-    # Set subscription end date to 30 days from now (monthly subscription)
-    current_user.subscription_end_date = datetime.utcnow() + relativedelta(months=1)
-    db.session.commit()
-    flash('Subscription activated! You now have unlimited access.')
-    return redirect(url_for('dashboard'))
+
 
 @app.route('/cancel_subscription', methods=['POST'])
 @login_required
@@ -378,7 +370,7 @@ def admin_analytics():
     }
 
     # Performance Trend (last 30 days)
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
     daily_scores = db.session.query(
         func.cast(TestResult.test_date, db.Date).label('date'),
         func.avg(TestResult.score * 100.0 / TestResult.total_questions).label('avg_score')
@@ -758,7 +750,7 @@ def api_test_start(category):
     # Create a TestSession
     session_rec = TestSession(
         user_id=current_user.id,
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc),
         question_ids=json.dumps(question_ids),
         time_limit_seconds=time_limit_seconds
     )

@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timezone
 
 db = SQLAlchemy()
 
@@ -26,7 +26,7 @@ class User(UserMixin, db.Model):
             return True
         
         # If subscription was cancelled but still within the paid period
-        if self.subscription_end_date and datetime.utcnow() < self.subscription_end_date:
+        if self.subscription_end_date and datetime.now(timezone.utc) < self.subscription_end_date:
             return True
         
         return False
@@ -36,7 +36,7 @@ class TestResult(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
     total_questions = db.Column(db.Integer, nullable=False)
-    test_date = db.Column(db.DateTime, default=datetime.utcnow)
+    test_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     time_taken = db.Column(db.Integer)  # in seconds
     answers = db.relationship('Answer', backref='test_result', lazy=True, cascade="all, delete-orphan")
 
@@ -61,7 +61,7 @@ class Question(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('test_category.id'), nullable=False)
     difficulty = db.Column(db.String(20), default='basic')
     image_path = db.Column(db.String(500))  # Now stores URL or local path
-    created_date = db.Column(db.DateTime, default=datetime.utcnow)
+    created_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     options = db.relationship('AnswerOption', backref='question', lazy=True, cascade="all, delete-orphan")
     
     def get_correct_option(self):
@@ -92,7 +92,7 @@ class UploadedFile(db.Model):
     file_path = db.Column(db.String(500), nullable=False)  # Now stores URL or local path
     file_type = db.Column(db.String(20), nullable=False)  # 'image' or 'pdf'
     file_size = db.Column(db.Integer, nullable=False)
-    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    upload_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     cloudinary_public_id = db.Column(db.String(300))  # For Cloudinary file management
 
@@ -100,7 +100,7 @@ class UploadedFile(db.Model):
 class TestSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     question_ids = db.Column(db.Text)  # JSON list of question IDs
     time_limit_seconds = db.Column(db.Integer, default=30 * 60)
 
@@ -115,7 +115,7 @@ class TestConfig(db.Model):
 
 class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     username = db.Column(db.String(80))
     description = db.Column(db.Text, nullable=False)
@@ -131,7 +131,7 @@ class SubscriptionPlan(db.Model):
     currency = db.Column(db.String(3), default='USD')
     description = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class PendingPayment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -143,8 +143,8 @@ class PendingPayment(db.Model):
     plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plan.id'))
     status = db.Column(db.String(20), default='pending')  # pending, processing, completed, cancelled, expired
     paynow_reference = db.Column(db.String(100))  # Paynow's internal reference
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     user = db.relationship('User', backref='pending_payments')
     plan = db.relationship('SubscriptionPlan', backref='pending_payments')
@@ -162,7 +162,7 @@ class Transaction(db.Model):
     subscription_start = db.Column(db.DateTime)
     subscription_end = db.Column(db.DateTime)
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     user = db.relationship('User', backref='transactions')
     plan = db.relationship('SubscriptionPlan', backref='transactions')

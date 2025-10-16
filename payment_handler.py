@@ -4,7 +4,7 @@ Handles payment initialization, confirmation, and status checking
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from models import db, User, PendingPayment, Transaction, SubscriptionPlan
 import hashlib
 import hmac
@@ -95,7 +95,7 @@ class PaynowHandler:
             # Update pending payment
             pending.status = status.lower()
             pending.paynow_reference = paynow_reference
-            pending.updated_at = datetime.utcnow()
+            pending.updated_at = datetime.now(timezone.utc)
             
             # If payment is confirmed
             if status.lower() in ['paid', 'delivered', 'sent']:
@@ -119,7 +119,7 @@ class PaynowHandler:
                 return False
             
             # Calculate subscription dates
-            start_date = datetime.utcnow()
+            start_date = datetime.now(timezone.utc)
             end_date = start_date + timedelta(days=plan.duration_days)
             
             # Update user subscription
