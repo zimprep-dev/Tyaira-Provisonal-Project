@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Status - Driver Testing Platform{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1><i data-feather="clock" class="dashboard-icon"></i> Payment Processing</h1>
+    </div>
+
+    <div class="dashboard-actions">
+        <div class="action-card">
+            <h3><i data-feather="info" class="action-icon"></i> Payment Status</h3>
+            
+            <div class="payment-status-info">
+                <p><strong>Reference:</strong> {{ pending.payment_reference }}</p>
+                <p><strong>Amount:</strong> ${{ "%.2f"|format(pending.amount) }}</p>
+                <p><strong>Status:</strong> <span class="status-badge" id="payment-status">{{ pending.status }}</span></p>
+                <p><strong>Created:</strong> {{ pending.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+            </div>
+
+            <div class="payment-checking">
+                <div class="spinner"></div>
+                <p>Checking payment status with Paynow...</p>
+                <p><small>This page will automatically update when payment is confirmed.</small></p>
+            </div>
+
+            <div class="payment-actions">
+                <a href="{{ url_for('subscription_page') }}" class="btn btn-secondary">Back to Subscription</a>
+                <button onclick="checkStatus()" class="btn btn-primary">Refresh Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-status-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.payment-status-info p {
+    margin: 10px 0;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.payment-checking {
+    text-align: center;
+    padding: 30px 0;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.payment-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.payment-actions .btn {
+    flex: 1;
+}
+</style>
+
+<script>
+// Auto-check payment status every 5 seconds
+let checkInterval;
+let checkCount = 0;
+const maxChecks = 24; // Check for 2 minutes (24 * 5 seconds)
+
+function checkStatus() {
+    fetch('{{ url_for("check_payment", reference=pending.payment_reference) }}')
+        .then(response => response.json())
+        .then(data => {
+            const statusElement = document.getElementById('payment-status');
+            statusElement.textContent = data.status;
+            
+            if (data.status === 'completed' || data.status === 'paid') {
+                statusElement.style.background = '#28a745';
+                statusElement.style.color = 'white';
+                clearInterval(checkInterval);
+                showToast('Payment confirmed! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '{{ url_for("dashboard") }}';
+                }, 2000);
+            } else if (data.status === 'cancelled' || data.status === 'failed') {
+                statusElement.style.background = '#dc3545';
+                statusElement.style.color = 'white';
+                clearInterval(checkInterval);
+                showToast('Payment failed or cancelled', 'error');
+            } else {
+                statusElement.style.background = '#ffc107';
+                statusElement.style.color = 'black';
+            }
+            
+            checkCount++;
+            if (checkCount >= maxChecks) {
+                clearInterval(checkInterval);
+                showToast('Payment is taking longer than expected. Please check back later.', 'info');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking payment status:', error);
+        });
+}
+
+// Start auto-checking
+checkInterval = setInterval(checkStatus, 5000);
+
+// Initial check
+checkStatus();
+</script>
+{% endblock %}
