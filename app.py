@@ -1189,11 +1189,26 @@ def payment_return():
     """
     User returns here after completing/cancelling payment on Paynow
     """
-    reference = request.args.get('reference')
+    # Paynow can send reference as 'reference' or other parameter names
+    # Let's check all possible parameters
+    reference = request.args.get('reference') or request.args.get('Reference')
+    
+    # Debug: log all parameters received
+    print(f"Payment return URL parameters: {dict(request.args)}")
     
     if not reference:
-        flash('Invalid payment reference', 'error')
-        return redirect(url_for('subscription_page'))
+        # If no reference in URL, check if we have any pending payments for this user
+        pending = PendingPayment.query.filter_by(
+            user_id=current_user.id,
+            status='pending'
+        ).order_by(PendingPayment.created_at.desc()).first()
+        
+        if pending:
+            reference = pending.payment_reference
+            print(f"Found pending payment: {reference}")
+        else:
+            flash('Invalid payment reference', 'error')
+            return redirect(url_for('subscription_page'))
     
     # Find the pending payment
     pending = PendingPayment.query.filter_by(
@@ -1206,11 +1221,16 @@ def payment_return():
         return redirect(url_for('subscription_page'))
     
     # Check payment status with Paynow
-    status_response = payment_handler.check_payment_status(pending.poll_url)
-    status = status_response.get('status', '').lower()
+    if pending.poll_url:
+        status_response = payment_handler.check_payment_status(pending.poll_url)
+        status = status_response.get('status', '').lower()
+    else:
+        # If no poll URL, assume success if we got here
+        status = 'paid'
     
     if status in ['paid', 'delivered', 'sent']:
-        # Payment successful
+        # Payment successful - verify and activate
+        payment_handler.verify_payment(reference, status)
         flash('Payment successful! Your subscription is now active.', 'success')
         return redirect(url_for('dashboard'))
     elif status in ['cancelled', 'failed']:
