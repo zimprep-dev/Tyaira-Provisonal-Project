@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Payment Gateway - Tyaira</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .payment-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #0c5460;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-box">
+        <h1>🧪 Mock Payment Gateway</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Test Mode:</strong> This is a simulated payment page for development testing only.
+        </div>
+        
+        <div class="info">
+            <p><strong>Payment Reference:</strong> {{ reference }}</p>
+            <p>In production, this would be the actual Paynow payment gateway.</p>
+        </div>
+        
+        <p>Select an action to simulate:</p>
+        
+        <form method="POST" action="{{ url_for('mock_payment_complete') }}">
+            <input type="hidden" name="reference" value="{{ reference }}">
+            
+            <div class="buttons">
+                <button type="submit" name="action" value="pay" class="btn-success">
+                    ✅ Simulate Successful Payment
+                </button>
+                
+                <button type="submit" name="action" value="cancel" class="btn-danger">
+                    ❌ Simulate Cancelled Payment
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

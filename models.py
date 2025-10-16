@@ -121,3 +121,48 @@ class ActivityLog(db.Model):
     description = db.Column(db.Text, nullable=False)
 
     user = db.relationship('User', backref='activity_logs')
+
+# Payment Models
+class SubscriptionPlan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # e.g., "1 Month", "3 Months", "12 Months"
+    duration_days = db.Column(db.Integer, nullable=False)  # 30, 90, 365
+    price = db.Column(db.Float, nullable=False)  # in USD
+    currency = db.Column(db.String(3), default='USD')
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class PendingPayment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    payment_reference = db.Column(db.String(100), unique=True, nullable=False)
+    poll_url = db.Column(db.String(500))
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), default='USD')
+    plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plan.id'))
+    status = db.Column(db.String(20), default='pending')  # pending, processing, completed, cancelled, expired
+    paynow_reference = db.Column(db.String(100))  # Paynow's internal reference
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='pending_payments')
+    plan = db.relationship('SubscriptionPlan', backref='pending_payments')
+
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), default='USD')
+    reference = db.Column(db.String(100), unique=True, nullable=False)
+    paynow_reference = db.Column(db.String(100))
+    status = db.Column(db.String(20), nullable=False)  # completed, failed, refunded, disputed
+    payment_method = db.Column(db.String(50), default='paynow')
+    plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plan.id'))
+    subscription_start = db.Column(db.DateTime)
+    subscription_end = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='transactions')
+    plan = db.relationship('SubscriptionPlan', backref='transactions')

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, Question, AnswerOption, TestResult, Answer, TestCategory, UploadedFile, TestSession, TestConfig, ActivityLog
+from models import db, User, Question, AnswerOption, TestResult, Answer, TestCategory, UploadedFile, TestSession, TestConfig, ActivityLog, SubscriptionPlan, PendingPayment, Transaction
 from sqlalchemy import func
 from datetime import datetime, timedelta
 import random
@@ -12,6 +12,7 @@ import uuid
 import file_storage
 from dotenv import load_dotenv
 from utils import is_mobile_device, get_device_type
+from payment_handler import payment_handler
 
 # Load environment variables
 load_dotenv()
@@ -1087,6 +1088,316 @@ def init_db_command():
     db.create_all()
     create_admin_user()
     print("Database initialized.")
+
+# ===================================
+# PAYMENT & SUBSCRIPTION ROUTES
+# ===================================
+
+@app.route('/subscription')
+@login_required
+def subscription_page():
+    """Display subscription plans and user's current subscription"""
+    plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.duration_days).all()
+    
+    # Get user's latest transaction
+    latest_transaction = Transaction.query.filter_by(
+        user_id=current_user.id,
+        status='completed'
+    ).order_by(Transaction.created_at.desc()).first()
+    
+    return render_template('subscription.html',
+                         plans=plans,
+                         latest_transaction=latest_transaction,
+                         has_subscription=current_user.has_active_subscription())
+
+@app.route('/subscribe/<int:plan_id>', methods=['POST'])
+@login_required
+def initiate_payment(plan_id):
+    """Initiate payment for a subscription plan"""
+    plan = SubscriptionPlan.query.get_or_404(plan_id)
+    
+    if not plan.is_active:
+        flash('This subscription plan is not available', 'error')
+        return redirect(url_for('subscription_page'))
+    
+    # Generate unique reference
+    reference = f"TYA-{current_user.id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    
+    # Create payment with Paynow
+    result = payment_handler.create_payment(current_user, plan, reference)
+    
+    if result['success']:
+        # Save pending payment in database
+        pending = PendingPayment(
+            user_id=current_user.id,
+            payment_reference=reference,
+            poll_url=result['poll_url'],
+            amount=plan.price,
+            currency=plan.currency,
+            plan_id=plan.id,
+            status='pending'
+        )
+        db.session.add(pending)
+        db.session.commit()
+        
+        # Log activity
+        log = ActivityLog(
+            user_id=current_user.id,
+            username=current_user.username,
+            description=f"Initiated payment for {plan.name} subscription (${plan.price})"
+        )
+        db.session.add(log)
+        db.session.commit()
+        
+        # Redirect user to Paynow payment page
+        return redirect(result['payment_url'])
+    else:
+        flash(f"Payment initialization failed: {result.get('error', 'Unknown error')}", 'error')
+        return redirect(url_for('subscription_page'))
+
+@app.route('/payment/notify', methods=['POST', 'GET'])
+def payment_notify():
+    """
+    Webhook endpoint for Paynow to send payment status updates
+    This is called automatically by Paynow when payment status changes
+    """
+    try:
+        # Get payment data from Paynow
+        reference = request.values.get('reference')
+        paynow_ref = request.values.get('paynowreference')
+        status = request.values.get('status')
+        amount = request.values.get('amount')
+        hash_value = request.values.get('hash')
+        
+        if not reference:
+            return 'Missing reference', 400
+        
+        # Verify and process payment
+        success = payment_handler.verify_payment(
+            reference=reference,
+            status=status,
+            paynow_reference=paynow_ref,
+            hash_value=hash_value
+        )
+        
+        if success:
+            # Log the notification
+            print(f"Payment notification processed: {reference} - {status}")
+            return 'OK', 200
+        else:
+            return 'Payment verification failed', 400
+            
+    except Exception as e:
+        print(f"Error processing payment notification: {e}")
+        return 'Error', 500
+
+@app.route('/payment/return')
+@login_required
+def payment_return():
+    """
+    User returns here after completing/cancelling payment on Paynow
+    """
+    reference = request.args.get('reference')
+    
+    if not reference:
+        flash('Invalid payment reference', 'error')
+        return redirect(url_for('subscription_page'))
+    
+    # Find the pending payment
+    pending = PendingPayment.query.filter_by(
+        payment_reference=reference,
+        user_id=current_user.id
+    ).first()
+    
+    if not pending:
+        flash('Payment not found', 'error')
+        return redirect(url_for('subscription_page'))
+    
+    # Check payment status with Paynow
+    status_response = payment_handler.check_payment_status(pending.poll_url)
+    status = status_response.get('status', '').lower()
+    
+    if status in ['paid', 'delivered', 'sent']:
+        # Payment successful
+        flash('Payment successful! Your subscription is now active.', 'success')
+        return redirect(url_for('dashboard'))
+    elif status in ['cancelled', 'failed']:
+        # Payment failed
+        flash('Payment was cancelled or failed. Please try again.', 'warning')
+        return redirect(url_for('subscription_page'))
+    else:
+        # Payment pending
+        flash('Payment is being processed. You will receive confirmation shortly.', 'info')
+        return redirect(url_for('payment_status', reference=reference))
+
+@app.route('/payment/status/<reference>')
+@login_required
+def payment_status(reference):
+    """Check status of a pending payment"""
+    pending = PendingPayment.query.filter_by(
+        payment_reference=reference,
+        user_id=current_user.id
+    ).first()
+    
+    if not pending:
+        flash('Payment not found', 'error')
+        return redirect(url_for('subscription_page'))
+    
+    return render_template('payment_status.html', pending=pending)
+
+@app.route('/payment/check/<reference>')
+@login_required
+def check_payment(reference):
+    """AJAX endpoint to check payment status"""
+    pending = PendingPayment.query.filter_by(
+        payment_reference=reference,
+        user_id=current_user.id
+    ).first()
+    
+    if not pending:
+        return jsonify({'error': 'Payment not found'}), 404
+    
+    # Check with Paynow
+    status_response = payment_handler.check_payment_status(pending.poll_url)
+    status = status_response.get('status', 'Unknown')
+    
+    return jsonify({
+        'status': pending.status,
+        'paynow_status': status,
+        'amount': pending.amount,
+        'plan_name': pending.plan.name if pending.plan else 'Unknown'
+    })
+
+@app.route('/payment/mock')
+def mock_payment():
+    """Mock payment page for testing (development only)"""
+    if os.getenv('FLASK_ENV') == 'production':
+        return 'Not available', 404
+    
+    reference = request.args.get('ref')
+    return render_template('mock_payment.html', reference=reference)
+
+@app.route('/payment/mock/complete', methods=['POST'])
+def mock_payment_complete():
+    """Complete mock payment (development only)"""
+    if os.getenv('FLASK_ENV') == 'production':
+        return 'Not available', 404
+    
+    reference = request.form.get('reference')
+    action = request.form.get('action')  # 'pay' or 'cancel'
+    
+    if action == 'pay':
+        # Simulate successful payment
+        payment_handler.verify_payment(
+            reference=reference,
+            status='Paid',
+            paynow_reference=f'MOCK-{reference}'
+        )
+        flash('Mock payment successful!', 'success')
+    else:
+        # Simulate cancelled payment
+        payment_handler.verify_payment(
+            reference=reference,
+            status='Cancelled'
+        )
+        flash('Mock payment cancelled', 'warning')
+    
+    return redirect(url_for('payment_return', reference=reference))
+
+@app.route('/transactions')
+@login_required
+def my_transactions():
+    """View user's payment history"""
+    transactions = Transaction.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Transaction.created_at.desc()).all()
+    
+    return render_template('transactions.html', transactions=transactions)
+
+# Admin: Manage subscription plans
+@app.route('/admin/plans')
+@login_required
+def admin_plans():
+    """Admin page to manage subscription plans"""
+    if current_user.username != 'admin':
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    plans = SubscriptionPlan.query.order_by(SubscriptionPlan.duration_days).all()
+    return render_template('admin_plans.html', plans=plans)
+
+@app.route('/admin/plans/add', methods=['POST'])
+@login_required
+def admin_add_plan():
+    """Add new subscription plan"""
+    if current_user.username != 'admin':
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        plan = SubscriptionPlan(
+            name=request.form.get('name'),
+            duration_days=int(request.form.get('duration_days')),
+            price=float(request.form.get('price')),
+            currency=request.form.get('currency', 'USD'),
+            description=request.form.get('description'),
+            is_active=request.form.get('is_active') == 'on'
+        )
+        db.session.add(plan)
+        db.session.commit()
+        
+        flash('Subscription plan added successfully', 'success')
+        return redirect(url_for('admin_plans'))
+    except Exception as e:
+        flash(f'Error adding plan: {str(e)}', 'error')
+        return redirect(url_for('admin_plans'))
+
+@app.route('/admin/plans/edit/<int:plan_id>', methods=['POST'])
+@login_required
+def admin_edit_plan(plan_id):
+    """Edit subscription plan"""
+    if current_user.username != 'admin':
+        return jsonify({'error': 'Access denied'}), 403
+    
+    plan = SubscriptionPlan.query.get_or_404(plan_id)
+    
+    try:
+        plan.name = request.form.get('name')
+        plan.duration_days = int(request.form.get('duration_days'))
+        plan.price = float(request.form.get('price'))
+        plan.currency = request.form.get('currency', 'USD')
+        plan.description = request.form.get('description')
+        plan.is_active = request.form.get('is_active') == 'on'
+        
+        db.session.commit()
+        flash('Plan updated successfully', 'success')
+    except Exception as e:
+        flash(f'Error updating plan: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_plans'))
+
+@app.route('/admin/transactions')
+@login_required
+def admin_transactions():
+    """Admin view of all transactions"""
+    if current_user.username != 'admin':
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    transactions = Transaction.query.order_by(Transaction.created_at.desc()).limit(100).all()
+    
+    # Calculate statistics
+    total_revenue = db.session.query(func.sum(Transaction.amount)).filter(
+        Transaction.status == 'completed'
+    ).scalar() or 0
+    
+    total_transactions = Transaction.query.filter_by(status='completed').count()
+    pending_payments = PendingPayment.query.filter_by(status='pending').count()
+    
+    return render_template('admin_transactions.html',
+                         transactions=transactions,
+                         total_revenue=total_revenue,
+                         total_transactions=total_transactions,
+                         pending_payments=pending_payments)
 
 if __name__ == '__main__':
     app.run(debug=True)
