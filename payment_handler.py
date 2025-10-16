@@ -12,8 +12,17 @@ class PaynowHandler:
     def __init__(self):
         self.integration_id = os.getenv('PAYNOW_INTEGRATION_ID', '22233')
         self.integration_key = os.getenv('PAYNOW_INTEGRATION_KEY', '5edbeab4-3c75-4132-9785-a81b3fde4bde')
-        self.return_url = os.getenv('PAYNOW_RETURN_URL', 'http://localhost:5000/payment/return')
-        self.result_url = os.getenv('PAYNOW_RESULT_URL', 'http://localhost:5000/payment/notify')
+        
+        # Auto-detect hosting environment and build correct URLs
+        self.base_url = self._get_base_url()
+        self.return_url = f"{self.base_url}/payment/return"
+        self.result_url = f"{self.base_url}/payment/notify"
+        
+        # Log the detected URLs for debugging
+        print(f"🌐 Paynow Handler initialized:")
+        print(f"   Base URL: {self.base_url}")
+        print(f"   Return URL: {self.return_url}")
+        print(f"   Result URL: {self.result_url}")
         
         # Initialize Paynow SDK
         self.paynow = Paynow(
@@ -22,6 +31,41 @@ class PaynowHandler:
             self.return_url,
             self.result_url
         )
+    
+    def _get_base_url(self):
+        """
+        Auto-detect the base URL based on hosting environment
+        Supports: Render, Heroku, Railway, Vercel, and local development
+        """
+        # 1. Check for explicitly set BASE_URL in environment
+        if os.getenv('BASE_URL'):
+            return os.getenv('BASE_URL').rstrip('/')
+        
+        # 2. Check for Render
+        if os.getenv('RENDER'):
+            render_service = os.getenv('RENDER_EXTERNAL_URL') or os.getenv('RENDER_SERVICE_NAME')
+            if render_service:
+                if render_service.startswith('http'):
+                    return render_service.rstrip('/')
+                else:
+                    return f"https://{render_service}.onrender.com"
+        
+        # 3. Check for Heroku
+        if os.getenv('DYNO'):
+            app_name = os.getenv('HEROKU_APP_NAME')
+            if app_name:
+                return f"https://{app_name}.herokuapp.com"
+        
+        # 4. Check for Railway
+        if os.getenv('RAILWAY_STATIC_URL'):
+            return os.getenv('RAILWAY_STATIC_URL').rstrip('/')
+        
+        # 5. Check for production environment variable
+        if os.getenv('FLASK_ENV') == 'production' and os.getenv('PRODUCTION_URL'):
+            return os.getenv('PRODUCTION_URL').rstrip('/')
+        
+        # 6. Default to localhost for development
+        return 'http://localhost:5000'
         
     def create_payment(self, user, plan, reference):
         """
