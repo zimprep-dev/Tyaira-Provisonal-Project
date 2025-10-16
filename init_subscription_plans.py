@@ -13,38 +13,14 @@ def init_plans():
             print(f'Subscription plans already exist ({existing_plans} plans found)')
             return
         
-        # Create default subscription plans
+        # Create single monthly subscription plan
         plans = [
             {
-                'name': '1 Month Premium',
+                'name': 'Premium Monthly',
                 'duration_days': 30,
                 'price': 5.00,
                 'currency': 'USD',
-                'description': 'One month of unlimited access to all driving theory tests',
-                'is_active': True
-            },
-            {
-                'name': '3 Months Premium',
-                'duration_days': 90,
-                'price': 12.00,
-                'currency': 'USD',
-                'description': 'Three months of unlimited access - Save 20%!',
-                'is_active': True
-            },
-            {
-                'name': '6 Months Premium',
-                'duration_days': 180,
-                'price': 20.00,
-                'currency': 'USD',
-                'description': 'Six months of unlimited access - Save 33%!',
-                'is_active': True
-            },
-            {
-                'name': '1 Year Premium',
-                'duration_days': 365,
-                'price': 35.00,
-                'currency': 'USD',
-                'description': 'One full year of unlimited access - Best value, save 42%!',
+                'description': 'Monthly subscription - unlimited access to all driving theory tests',
                 'is_active': True
             }
         ]

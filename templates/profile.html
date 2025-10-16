@@ -59,8 +59,8 @@
             {% if not user.has_active_subscription() %}
             <div class="upgrade-section">
                 <h3>Upgrade to Premium</h3>
-                <p>Get unlimited access to tests and downloads for just $3/month</p>
-                <a href="{{ url_for('subscribe') }}" class="btn btn-primary">Upgrade Now</a>
+                <p>Get unlimited access to tests and downloads for just $5/month</p>
+                <a href="{{ url_for('subscription_page') }}" class="btn btn-primary">Upgrade Now</a>
             </div>
             {% endif %}
         </div>

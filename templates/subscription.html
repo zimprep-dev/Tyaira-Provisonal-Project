@@ -1,382 +1,167 @@
 {% extends "base.html" %}
 
+{% block title %}Premium Subscription - Driver Testing Platform{% endblock %}
+
 {% block content %}
-<div class="subscription-page">
-    <h1>💎 Premium Subscription Plans</h1>
-    
-    <!-- Current Subscription Status -->
-    {% if has_subscription %}
-    <div class="subscription-status active">
-        <h2>✅ Active Subscription</h2>
-        {% if latest_transaction %}
-        <p><strong>Plan:</strong> {{ latest_transaction.plan.name if latest_transaction.plan else 'Premium' }}</p>
-        <p><strong>Started:</strong> {{ latest_transaction.subscription_start.strftime('%B %d, %Y') if latest_transaction.subscription_start else 'N/A' }}</p>
-        <p><strong>Expires:</strong> {{ current_user.subscription_end_date.strftime('%B %d, %Y') if current_user.subscription_end_date else 'N/A' }}</p>
-        <p><strong>Status:</strong> <span class="badge badge-success">Active</span></p>
-        {% endif %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1><i data-feather="star" class="dashboard-icon"></i> Premium Subscription</h1>
+        <div class="user-status">
+            {% if has_subscription %}
+                <span class="status-badge subscribed"><i data-feather="check-circle" class="badge-icon"></i> Active Subscription</span>
+            {% else %}
+                <span class="status-badge free"><i data-feather="lock" class="badge-icon"></i> Free Tier</span>
+            {% endif %}
+        </div>
     </div>
-    {% else %}
-    <div class="subscription-status inactive">
-        <h2>🔒 No Active Subscription</h2>
-        <p>Upgrade to Premium to get unlimited access to all driving theory tests!</p>
+
+    <!-- Current Subscription Status -->
+    {% if has_subscription and latest_transaction %}
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h3><i data-feather="award" class="stat-icon"></i> Status</h3>
+            <div class="stat-number">Active</div>
+        </div>
+        <div class="stat-card">
+            <h3><i data-feather="calendar" class="stat-icon"></i> Expires</h3>
+            <div class="stat-number">{{ current_user.subscription_end_date.strftime('%b %d, %Y') if current_user.subscription_end_date else 'N/A' }}</div>
+        </div>
+        <div class="stat-card">
+            <h3><i data-feather="dollar-sign" class="stat-icon"></i> Monthly</h3>
+            <div class="stat-number">$5.00</div>
+        </div>
     </div>
     {% endif %}
 
-    <!-- Subscription Plans -->
-    <div class="plans-container">
-        <h2>Choose Your Plan</h2>
-        
-        <div class="plans-grid">
-            {% for plan in plans %}
-            <div class="plan-card {% if loop.index == 2 %}popular{% endif %}">
-                {% if loop.index == 2 %}
-                <div class="popular-badge">Most Popular</div>
-                {% endif %}
-                
-                <div class="plan-header">
-                    <h3>{{ plan.name }}</h3>
-                    <div class="plan-price">
-                        <span class="currency">$</span>
-                        <span class="amount">{{ "%.2f"|format(plan.price) }}</span>
-                    </div>
-                    <div class="plan-duration">{{ plan.duration_days }} days access</div>
-                </div>
-                
-                <div class="plan-description">
-                    <p>{{ plan.description }}</p>
-                </div>
-                
-                <div class="plan-features">
-                    <ul>
-                        <li>✅ Unlimited practice tests</li>
-                        <li>✅ 400+ questions database</li>
-                        <li>✅ Detailed explanations</li>
-                        <li>✅ Progress tracking</li>
-                        <li>✅ Mobile friendly</li>
-                        <li>✅ No ads</li>
-                    </ul>
-                </div>
-                
-                <div class="plan-action">
-                    {% if has_subscription %}
-                    <button class="btn-subscribe" disabled>Current Plan</button>
-                    {% else %}
-                    <form method="POST" action="{{ url_for('initiate_payment', plan_id=plan.id) }}">
-                        <button type="submit" class="btn-subscribe">Subscribe Now</button>
-                    </form>
-                    {% endif %}
-                </div>
-                
-                <div class="plan-savings">
-                    {% if plan.duration_days == 90 %}
-                    <span class="savings-badge">Save 20%</span>
-                    {% elif plan.duration_days == 180 %}
-                    <span class="savings-badge">Save 33%</span>
-                    {% elif plan.duration_days == 365 %}
-                    <span class="savings-badge">Save 42%</span>
-                    {% endif %}
-                </div>
+    <!-- Premium Plan Card -->
+    {% if not has_subscription %}
+    <div class="dashboard-actions">
+        <div class="action-card featured">
+            <h3><i data-feather="zap" class="action-icon"></i> Premium Monthly Subscription</h3>
+            <div class="subscription-price">
+                <span class="price-amount">$5.00</span>
+                <span class="price-period">/month</span>
             </div>
-            {% endfor %}
+            
+            <div class="subscription-features">
+                <ul>
+                    <li><i data-feather="check"></i> Unlimited practice tests</li>
+                    <li><i data-feather="check"></i> 400+ questions database</li>
+                    <li><i data-feather="check"></i> Detailed explanations</li>
+                    <li><i data-feather="check"></i> Progress tracking & analytics</li>
+                    <li><i data-feather="check"></i> Mobile friendly interface</li>
+                    <li><i data-feather="check"></i> No advertisements</li>
+                </ul>
+            </div>
+
+            {% if plans and plans|length > 0 %}
+            <form method="POST" action="{{ url_for('initiate_payment', plan_id=plans[0].id) }}">
+                <button type="submit" class="btn btn-primary btn-large">
+                    <i data-feather="credit-card"></i> Subscribe Now
+                </button>
+            </form>
+            {% endif %}
+
+            <div class="payment-security">
+                <small><i data-feather="lock"></i> Secure payment via Paynow • Instant activation</small>
+            </div>
         </div>
     </div>
+    {% else %}
+    <div class="dashboard-actions">
+        <div class="action-card">
+            <h3><i data-feather="info" class="action-icon"></i> Subscription Information</h3>
+            <p>Your premium subscription is currently active. You have unlimited access to all features.</p>
+            {% if current_user.subscription_end_date %}
+            <p><strong>Your subscription will renew or expire on {{ current_user.subscription_end_date.strftime('%B %d, %Y') }}</strong></p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Benefits Section -->
-    <div class="benefits-section">
-        <h2>Why Go Premium?</h2>
-        <div class="benefits-grid">
-            <div class="benefit-card">
-                <div class="benefit-icon">📚</div>
-                <h3>Complete Question Bank</h3>
-                <p>Access all 400+ professionally curated driving theory questions</p>
+    <div class="recent-tests">
+        <h2><i data-feather="gift" class="section-icon"></i> What You Get with Premium</h2>
+        <div class="test-results">
+            <div class="test-result">
+                <div class="test-date"><i data-feather="check-circle" style="color: #28a745;"></i> Unlimited Tests</div>
+                <div class="test-score">Take as many practice tests as you need</div>
             </div>
-            <div class="benefit-card">
-                <div class="benefit-icon">📊</div>
-                <h3>Track Your Progress</h3>
-                <p>Detailed analytics and performance insights to help you improve</p>
+            <div class="test-result">
+                <div class="test-date"><i data-feather="database" style="color: #007bff;"></i> Full Question Bank</div>
+                <div class="test-score">Access all 400+ driving theory questions</div>
             </div>
-            <div class="benefit-card">
-                <div class="benefit-icon">🎯</div>
-                <h3>Targeted Practice</h3>
-                <p>Focus on specific categories or difficulty levels</p>
+            <div class="test-result">
+                <div class="test-date"><i data-feather="bar-chart-2" style="color: #ffc107;"></i> Performance Analytics</div>
+                <div class="test-score">Track your progress and identify weak areas</div>
             </div>
-            <div class="benefit-card">
-                <div class="benefit-icon">⏱️</div>
-                <h3>Timed Tests</h3>
-                <p>Simulate real exam conditions with customizable timers</p>
+            <div class="test-result">
+                <div class="test-date"><i data-feather="smartphone" style="color: #17a2b8;"></i> Mobile Optimized</div>
+                <div class="test-score">Study anywhere on any device</div>
             </div>
         </div>
-    </div>
-
-    <!-- Payment Info -->
-    <div class="payment-info">
-        <h3>💳 Secure Payment</h3>
-        <p>All payments are processed securely through Paynow. Your subscription activates instantly after payment confirmation.</p>
-        <p><small>✅ Secure checkout &nbsp; | &nbsp; 🔒 SSL encrypted &nbsp; | &nbsp; 📱 Mobile friendly</small></p>
     </div>
 </div>
 
 <style>
-.subscription-page {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.subscription-page h1 {
+.subscription-price {
     text-align: center;
-    margin-bottom: 30px;
-    font-size: 2.5rem;
-    color: #333;
+    margin: 20px 0;
 }
 
-.subscription-status {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 40px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.subscription-status.active {
-    border-left: 5px solid #28a745;
-}
-
-.subscription-status.inactive {
-    border-left: 5px solid #ffc107;
-}
-
-.subscription-status h2 {
-    margin-top: 0;
-    margin-bottom: 15px;
-}
-
-.badge {
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-.badge-success {
-    background: #28a745;
-    color: white;
-}
-
-.plans-container {
-    margin-bottom: 50px;
-}
-
-.plans-container h2 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 2rem;
-}
-
-.plans-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
-    margin-bottom: 40px;
-}
-
-.plan-card {
-    background: white;
-    border-radius: 15px;
-    padding: 30px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
-    position: relative;
-    overflow: hidden;
-}
-
-.plan-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.plan-card.popular {
-    border: 3px solid #007bff;
-    transform: scale(1.05);
-}
-
-.popular-badge {
-    position: absolute;
-    top: 20px;
-    right: -35px;
-    background: #007bff;
-    color: white;
-    padding: 5px 40px;
-    transform: rotate(45deg);
-    font-size: 0.9rem;
-    font-weight: bold;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-
-.plan-header {
-    text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #f0f0f0;
-}
-
-.plan-header h3 {
-    margin: 0 0 15px 0;
-    font-size: 1.5rem;
-    color: #333;
-}
-
-.plan-price {
-    margin: 15px 0;
-}
-
-.plan-price .currency {
-    font-size: 1.5rem;
-    vertical-align: super;
-}
-
-.plan-price .amount {
+.price-amount {
     font-size: 3rem;
     font-weight: bold;
     color: #007bff;
 }
 
-.plan-duration {
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.plan-description {
-    margin-bottom: 20px;
-    text-align: center;
+.price-period {
+    font-size: 1.2rem;
     color: #666;
 }
 
-.plan-features ul {
+.subscription-features {
+    margin: 30px 0;
+}
+
+.subscription-features ul {
     list-style: none;
     padding: 0;
-    margin: 20px 0;
 }
 
-.plan-features li {
-    padding: 8px 0;
-    font-size: 0.95rem;
+.subscription-features li {
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.plan-action {
-    margin-top: 25px;
+.subscription-features li i {
+    color: #28a745;
+    width: 20px;
+    height: 20px;
 }
 
-.btn-subscribe {
-    width: 100%;
-    padding: 15px;
+.btn-large {
+    padding: 15px 30px;
     font-size: 1.1rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #007bff, #0056b3);
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
-.btn-subscribe:hover:not(:disabled) {
-    background: linear-gradient(135deg, #0056b3, #003d82);
-    transform: scale(1.05);
-}
-
-.btn-subscribe:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-}
-
-.plan-savings {
+.payment-security {
     text-align: center;
     margin-top: 15px;
-}
-
-.savings-badge {
-    background: #28a745;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: bold;
-}
-
-.benefits-section {
-    margin: 60px 0;
-}
-
-.benefits-section h2 {
-    text-align: center;
-    margin-bottom: 40px;
-    font-size: 2rem;
-}
-
-.benefits-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
-}
-
-.benefit-card {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-.benefit-icon {
-    font-size: 3rem;
-    margin-bottom: 15px;
-}
-
-.benefit-card h3 {
-    margin: 15px 0;
-    color: #333;
-}
-
-.benefit-card p {
-    color: #666;
-    line-height: 1.6;
-}
-
-.payment-info {
-    background: #f8f9fa;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    margin-top: 40px;
-}
-
-.payment-info h3 {
-    margin-top: 0;
-    color: #333;
-}
-
-.payment-info p {
-    margin: 10px 0;
     color: #666;
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
-    .subscription-page h1 {
-        font-size: 1.8rem;
-    }
-    
-    .plans-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .plan-card.popular {
-        transform: scale(1);
-    }
-    
-    .benefits-grid {
-        grid-template-columns: 1fr;
-    }
+.payment-security i {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
 }
 </style>
 {% endblock %}

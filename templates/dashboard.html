@@ -52,8 +52,8 @@
         {% if not user.has_active_subscription() %}
         <div class="action-card featured">
             <h3><i data-feather="zap" class="action-icon"></i> Upgrade to Premium</h3>
-            <p>Get unlimited access for just $3/month</p>
-            <a href="{{ url_for('subscribe') }}" class="btn btn-primary">Subscribe Now</a>
+            <p>Get unlimited access for just $5/month</p>
+            <a href="{{ url_for('subscription_page') }}" class="btn btn-primary">Subscribe Now</a>
         </div>
         {% endif %}
     </div>
