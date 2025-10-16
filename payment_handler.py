@@ -1,72 +1,63 @@
 """
-Payment handler for Paynow integration
+Payment handler for Paynow integration using official Paynow SDK
 Handles payment initialization, confirmation, and status checking
 """
 
 import os
 from datetime import datetime, timedelta, timezone
 from models import db, User, PendingPayment, Transaction, SubscriptionPlan
-import hashlib
-import hmac
-import urllib.parse
+from paynow import Paynow
 
 class PaynowHandler:
     def __init__(self):
-        self.integration_id = os.getenv('PAYNOW_INTEGRATION_ID', 'test_integration')
-        self.integration_key = os.getenv('PAYNOW_INTEGRATION_KEY', 'test_key')
+        self.integration_id = os.getenv('PAYNOW_INTEGRATION_ID', '22233')
+        self.integration_key = os.getenv('PAYNOW_INTEGRATION_KEY', '5edbeab4-3c75-4132-9785-a81b3fde4bde')
         self.return_url = os.getenv('PAYNOW_RETURN_URL', 'http://localhost:5000/payment/return')
         self.result_url = os.getenv('PAYNOW_RESULT_URL', 'http://localhost:5000/payment/notify')
-        self.paynow_url = os.getenv('PAYNOW_URL', 'https://www.paynow.co.zw/interface/initiatetransaction')
+        
+        # Initialize Paynow SDK
+        self.paynow = Paynow(
+            self.integration_id,
+            self.integration_key,
+            self.return_url,
+            self.result_url
+        )
         
     def create_payment(self, user, plan, reference):
         """
-        Create a new payment request
+        Create a new payment request using Paynow SDK
         Returns: dict with payment_url and poll_url or None if failed
         """
         try:
-            # Build payment data
-            payment_data = {
-                'id': self.integration_id,
-                'reference': reference,
-                'amount': f"{plan.price:.2f}",
-                'additionalinfo': f"{plan.name} Subscription",
-                'returnurl': self.return_url,
-                'resulturl': self.result_url,
-                'authemail': user.email,
-                'status': 'Message'
-            }
+            # Create payment using Paynow SDK
+            payment = self.paynow.create_payment(reference, user.email)
             
-            # Generate hash
-            payment_data['hash'] = self._generate_hash(payment_data)
+            # Add item to payment
+            payment.add(f"{plan.name} Subscription", plan.price)
             
-            # In production, you would POST this to Paynow
-            # For now, we'll simulate the response
-            
-            # Simulated response (in production, parse Paynow's actual response)
+            # Send payment request to Paynow
             if os.getenv('FLASK_ENV') == 'production':
-                # TODO: Implement actual HTTP POST to Paynow
-                import requests
-                response = requests.post(self.paynow_url, data=payment_data)
-                response_data = self._parse_response(response.text)
+                # Production: Send to real Paynow
+                response = self.paynow.send(payment)
             else:
-                # Development/Test mode - simulate success
-                response_data = {
-                    'status': 'Ok',
-                    'browserurl': f'http://localhost:5000/payment/mock?ref={reference}',
-                    'pollurl': f'http://localhost:5000/payment/poll?ref={reference}',
-                    'hash': 'test_hash'
-                }
-            
-            if response_data.get('status') == 'Ok':
+                # Development: Use mock gateway
                 return {
                     'success': True,
-                    'payment_url': response_data.get('browserurl'),
-                    'poll_url': response_data.get('pollurl')
+                    'payment_url': f'http://localhost:5000/payment/mock?ref={reference}',
+                    'poll_url': f'http://localhost:5000/payment/poll?ref={reference}'
+                }
+            
+            # Check if payment initiation was successful
+            if response.success:
+                return {
+                    'success': True,
+                    'payment_url': response.redirect_url,  # URL to redirect user to
+                    'poll_url': response.poll_url  # URL to check payment status
                 }
             else:
                 return {
                     'success': False,
-                    'error': response_data.get('error', 'Unknown error')
+                    'error': response.errors if hasattr(response, 'errors') else 'Payment initiation failed'
                 }
                 
         except Exception as e:
@@ -158,21 +149,32 @@ class PaynowHandler:
     
     def check_payment_status(self, poll_url):
         """
-        Check payment status using poll URL
+        Check payment status using poll URL with Paynow SDK
         Returns: dict with status information
         """
         try:
             if os.getenv('FLASK_ENV') == 'production':
-                # TODO: Implement actual polling to Paynow
-                import requests
-                response = requests.post(poll_url, data={'id': self.integration_id})
-                return self._parse_response(response.text)
+                # Production: Check status with Paynow SDK
+                status = self.paynow.check_transaction_status(poll_url)
+                
+                if status.paid:
+                    return {
+                        'status': 'Paid',
+                        'reference': status.reference,
+                        'amount': str(status.amount) if hasattr(status, 'amount') else '0.00',
+                        'paynowreference': status.paynow_reference
+                    }
+                else:
+                    return {
+                        'status': status.status,
+                        'reference': status.reference
+                    }
             else:
                 # Development mode - return mock status
                 return {
                     'status': 'Paid',
                     'reference': 'TEST-REF',
-                    'amount': '10.00',
+                    'amount': '5.00',
                     'paynowreference': 'PAYNOW-12345'
                 }
         except Exception as e:
@@ -180,35 +182,6 @@ class PaynowHandler:
                 'status': 'Error',
                 'error': str(e)
             }
-    
-    def _generate_hash(self, data):
-        """Generate hash for Paynow integration"""
-        # Create string from data
-        values = [
-            self.integration_id,
-            data.get('reference', ''),
-            data.get('amount', ''),
-            data.get('additionalinfo', ''),
-            self.return_url,
-            self.result_url,
-            data.get('authemail', ''),
-            data.get('status', '')
-        ]
-        
-        hash_string = ''.join(str(v) for v in values)
-        hash_string += self.integration_key
-        
-        # Generate SHA512 hash
-        return hashlib.sha512(hash_string.encode()).hexdigest().upper()
-    
-    def _parse_response(self, response_text):
-        """Parse Paynow response into dictionary"""
-        result = {}
-        for line in response_text.split('&'):
-            if '=' in line:
-                key, value = line.split('=', 1)
-                result[key.lower()] = urllib.parse.unquote_plus(value)
-        return result
 
 # Global payment handler instance
 payment_handler = PaynowHandler()
