@@ -1646,6 +1646,43 @@ def admin_edit_plan(plan_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
 
+@app.route('/admin/plans/delete/<int:plan_id>', methods=['POST'])
+@login_required
+def admin_delete_plan(plan_id):
+    """Delete a subscription plan and handle associated data"""
+    if current_user.username != 'admin':
+        return jsonify({'error': 'Access denied'}), 403
+    
+    plan = SubscriptionPlan.query.get_or_404(plan_id)
+    
+    try:
+        # Check if any users are currently subscribed to this plan
+        active_subscribers = User.query.filter_by(
+            is_subscriber=True,
+            subscription_plan_id=plan_id
+        ).count()
+        
+        if active_subscribers > 0:
+            return jsonify({
+                'error': f'Cannot delete plan: {active_subscribers} active subscriber(s) are using this plan. Please reassign or cancel their subscriptions first.'
+            }), 400
+        
+        # Set subscription_plan_id to NULL for any users who had this plan
+        User.query.filter_by(subscription_plan_id=plan_id).update({'subscription_plan_id': None})
+        
+        # Delete transactions associated with this plan (optional - keep for records)
+        # Transaction.query.filter_by(plan_id=plan_id).delete()
+        
+        # Delete the plan
+        db.session.delete(plan)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'Plan "{plan.name}" deleted successfully'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+
 @app.route('/admin/transactions')
 @login_required
 def admin_transactions():

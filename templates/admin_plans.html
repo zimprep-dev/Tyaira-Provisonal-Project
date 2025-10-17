@@ -53,6 +53,9 @@
                     <i data-feather="eye"></i> Activate
                     {% endif %}
                 </button>
+                <button class="btn btn-danger btn-sm" onclick="deletePlan({{ plan.id }}, '{{ plan.name }}', {{ plan.active_subscribers }})">
+                    <i data-feather="trash-2"></i> Delete
+                </button>
             </div>
         </div>
         {% endfor %}
@@ -380,6 +383,47 @@ function togglePlan(planId, isActive) {
     });
 }
 
+async function deletePlan(planId, planName, activeSubscribers) {
+    // Check if plan has active subscribers
+    if (activeSubscribers > 0) {
+        Modal.alert(
+            `Cannot delete "${planName}": ${activeSubscribers} active subscriber(s) are using this plan. Please reassign or cancel their subscriptions first.`,
+            'error',
+            'Cannot Delete Plan'
+        );
+        return;
+    }
+    
+    // Confirm deletion
+    const confirmed = await Modal.confirm(
+        `Are you sure you want to permanently delete the plan "${planName}"? This action cannot be undone.`,
+        'Delete Plan'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+        const response = await fetch(`/admin/plans/delete/${planId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            Modal.alert(result.message || 'Plan deleted successfully!', 'success');
+            // Reload page to reflect changes
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            Modal.alert(result.error || 'Failed to delete plan', 'error');
+        }
+    } catch (error) {
+        Modal.alert('Error deleting plan: ' + error.message, 'error');
+    }
+}
+
 // Form submission
 document.getElementById('planForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -527,6 +571,15 @@ document.getElementById('planForm')?.addEventListener('submit', async (e) => {
 .btn-sm {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
 }
 
 .add-plan-section {

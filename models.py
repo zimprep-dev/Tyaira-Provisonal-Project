@@ -12,6 +12,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     is_subscriber = db.Column(db.Boolean, default=False)
     subscription_date = db.Column(db.DateTime)
+    subscription_start_date = db.Column(db.DateTime)  # When current subscription started
     subscription_end_date = db.Column(db.DateTime)  # When subscription access ends
     subscription_plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plan.id'))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
