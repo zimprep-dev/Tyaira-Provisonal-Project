@@ -1,7 +1,8 @@
 """
 Vercel serverless entry point
+This file is required for Vercel to serve the Flask application
 """
 from app import app
 
-# Vercel expects the app to be available at this path
-# This is a wrapper for Vercel's serverless functions
+# Vercel looks for 'app' or 'application' in this file
+# No need to do anything else - just import and expose the Flask app
