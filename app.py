@@ -573,12 +573,11 @@ def admin():
     categories = db.session.query(Question.category, func.count(Question.id)).group_by(Question.category).all()
     
     for category, question_count in categories:
-        # Get all questions in this category
-        category_questions = Question.query.filter_by(category=category).all()
-        
-        if category_questions:
+        if question_count > 0:
             # Calculate average correct percentage (simplified - you'd track this properly)
-            avg_correct = 65.0 + (hash(category) % 30)  # Placeholder calculation
+            # Using hash for consistent but varied percentages per category
+            category_str = str(category) if category else 'Uncategorized'
+            avg_correct = 65.0 + (hash(category_str) % 30)  # Placeholder calculation
             
             # Determine difficulty
             if avg_correct >= 70:
@@ -589,7 +588,7 @@ def admin():
                 difficulty = 'hard'
             
             category_performance.append({
-                'category': category or 'Uncategorized',
+                'category': category_str,
                 'question_count': question_count,
                 'avg_correct': avg_correct,
                 'difficulty': difficulty

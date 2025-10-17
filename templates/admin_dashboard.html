@@ -59,12 +59,16 @@
     <div class="charts-row">
         <div class="chart-card">
             <h3><i data-feather="trending-up"></i> User Growth (Last 30 Days)</h3>
-            <canvas id="userGrowthChart"></canvas>
+            <div class="chart-container">
+                <canvas id="userGrowthChart"></canvas>
+            </div>
         </div>
 
         <div class="chart-card">
             <h3><i data-feather="pie-chart"></i> User Distribution</h3>
-            <canvas id="userDistributionChart"></canvas>
+            <div class="chart-container">
+                <canvas id="userDistributionChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -95,7 +99,9 @@
         </div>
         <div class="chart-card full-width">
             <h3><i data-feather="activity"></i> Revenue Trend (Last 30 Days)</h3>
-            <canvas id="revenueChart"></canvas>
+            <div class="chart-container">
+                <canvas id="revenueChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -365,6 +371,11 @@
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 1rem;
+}
+
+.chart-container {
+    height: 300px;
+    position: relative;
 }
 
 /* Revenue Section */
