@@ -5,7 +5,13 @@
 {% block content %}
 <div class="dashboard">
     <div class="dashboard-header">
-        <h1><i data-feather="star" class="dashboard-icon"></i> Premium Subscription</h1>
+        <h1><i data-feather="star" class="dashboard-icon"></i> 
+            {% if has_subscription and user_plan %}
+                {{ user_plan.name }}
+            {% else %}
+                Premium Subscription
+            {% endif %}
+        </h1>
         <div class="user-status">
             {% if has_subscription %}
                 <span class="status-badge subscribed"><i data-feather="check-circle" class="badge-icon"></i> Active Subscription</span>
@@ -27,8 +33,22 @@
             <div class="stat-number">{{ current_user.subscription_end_date.strftime('%b %d, %Y') if current_user.subscription_end_date else 'N/A' }}</div>
         </div>
         <div class="stat-card">
-            <h3><i data-feather="dollar-sign" class="stat-icon"></i> Monthly</h3>
-            <div class="stat-number">$5.00</div>
+            <h3><i data-feather="dollar-sign" class="stat-icon"></i> 
+                {% if user_plan %}
+                    {% if user_plan.plan_type == 'usage' %}One-time{% else %}Monthly{% endif %}
+                {% else %}
+                    Price
+                {% endif %}
+            </h3>
+            <div class="stat-number">
+                {% if user_plan %}
+                    ${{ "%.2f"|format(user_plan.price) }}
+                {% elif latest_transaction %}
+                    ${{ "%.2f"|format(latest_transaction.amount) }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
         </div>
     </div>
     {% endif %}
@@ -119,7 +139,11 @@
     <div class="dashboard-actions">
         <div class="action-card">
             <h3><i data-feather="info" class="action-icon"></i> Subscription Information</h3>
-            <p>Your premium subscription is currently active. You have unlimited access to all features.</p>
+            {% if user_plan %}
+            <p>You are subscribed to the <strong>{{ user_plan.name }}</strong> plan. {{ user_plan.description }}</p>
+            {% else %}
+            <p>Your subscription is currently active. You have access to all features.</p>
+            {% endif %}
             {% if current_user.subscription_end_date %}
             <p><strong>Your subscription will renew or expire on {{ current_user.subscription_end_date.strftime('%B %d, %Y') }}</strong></p>
             {% endif %}

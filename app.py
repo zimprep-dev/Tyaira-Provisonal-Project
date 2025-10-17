@@ -1293,10 +1293,16 @@ def subscription_page():
         status='completed'
     ).order_by(Transaction.created_at.desc()).first()
     
+    # Get user's current subscription plan
+    user_plan = None
+    if current_user.subscription_plan_id:
+        user_plan = SubscriptionPlan.query.get(current_user.subscription_plan_id)
+    
     return render_template('subscription.html',
                          plans=plans,
                          latest_transaction=latest_transaction,
-                         has_subscription=current_user.has_active_subscription())
+                         has_subscription=current_user.has_active_subscription(),
+                         user_plan=user_plan)
 
 @app.route('/subscribe/<int:plan_id>', methods=['POST'])
 @login_required

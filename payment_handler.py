@@ -275,7 +275,9 @@ class PaynowHandler:
             # Update user subscription
             user.is_subscriber = True
             user.subscription_date = start_date
+            user.subscription_start_date = start_date
             user.subscription_end_date = end_date
+            user.subscription_plan_id = plan.id  # ✅ Link user to the plan they paid for
             
             # Create transaction record
             transaction = Transaction(
