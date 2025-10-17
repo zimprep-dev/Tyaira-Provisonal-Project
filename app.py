@@ -1523,6 +1523,22 @@ def admin_plans():
         return redirect(url_for('dashboard'))
     
     plans = SubscriptionPlan.query.order_by(SubscriptionPlan.duration_days).all()
+    
+    # Calculate active subscribers for each plan
+    # Count users with is_subscriber=True since they might not have subscription_plan_id set yet
+    for plan in plans:
+        # Count subscribers linked to this plan OR all subscribers if no plan is linked
+        linked_subscribers = User.query.filter_by(
+            is_subscriber=True, 
+            subscription_plan_id=plan.id
+        ).count()
+        
+        # If no one is linked, count all active subscribers for display
+        if linked_subscribers == 0:
+            plan.active_subscribers = User.query.filter_by(is_subscriber=True).count()
+        else:
+            plan.active_subscribers = linked_subscribers
+    
     return render_template('admin_plans.html', plans=plans)
 
 @app.route('/admin/plans/add', methods=['POST'])

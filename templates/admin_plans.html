@@ -55,7 +55,7 @@
             <div class="plan-stats">
                 <div class="stat-item">
                     <span class="stat-label">Active Subscribers</span>
-                    <span class="stat-value">{{ plan.subscribers|length }}</span>
+                    <span class="stat-value">{{ plan.active_subscribers if plan.active_subscribers is defined else 0 }}</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Status</span>
