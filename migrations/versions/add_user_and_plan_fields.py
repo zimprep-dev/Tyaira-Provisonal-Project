@@ -79,10 +79,15 @@ def upgrade():
     if 'has_performance_analytics' not in plan_columns:
         op.add_column('subscription_plan', sa.Column('has_performance_analytics', sa.Boolean(), nullable=True))
         op.execute("UPDATE subscription_plan SET has_performance_analytics = TRUE WHERE has_performance_analytics IS NULL")
+    
+    if 'is_featured' not in plan_columns:
+        op.add_column('subscription_plan', sa.Column('is_featured', sa.Boolean(), nullable=True))
+        op.execute("UPDATE subscription_plan SET is_featured = FALSE WHERE is_featured IS NULL")
 
 
 def downgrade():
     # Remove columns from subscription_plan
+    op.drop_column('subscription_plan', 'is_featured')
     op.drop_column('subscription_plan', 'has_performance_analytics')
     op.drop_column('subscription_plan', 'has_progress_tracking')
     op.drop_column('subscription_plan', 'has_download_access')
