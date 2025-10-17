@@ -215,10 +215,18 @@ def take_test():
 @app.route('/test_interface/<category>')
 @login_required
 def test_interface(category):
-    # Check if user can take test (free tier limit)
-    if not current_user.has_active_subscription() and len(current_user.tests_taken) >= 10:
-        flash('You have reached your limit of 10 free tests. Please subscribe for unlimited access.')
-        return redirect(url_for('dashboard'))
+    # Import access control
+    from access_control import can_take_test, get_test_stats
+    
+    # Check if user can take test based on their plan
+    can_take, reason = can_take_test(current_user)
+    
+    if not can_take:
+        flash(reason, 'error')
+        return redirect(url_for('subscription_page'))
+    
+    # Get test stats for display
+    test_stats = get_test_stats(current_user)
     
     # Adaptive rendering: detect device and serve appropriate template
     device_type = get_device_type()
@@ -226,13 +234,14 @@ def test_interface(category):
     # Debug: Print to console
     print(f"🔍 Device detected: {device_type}")
     print(f"📱 User-Agent: {request.headers.get('User-Agent', 'None')}")
+    print(f"📊 Test Stats: {test_stats}")
     
     if device_type == 'mobile':
         print("✅ Serving MOBILE template")
-        return render_template('mobile/test_interface_mobile.html', category=category)
+        return render_template('mobile/test_interface_mobile.html', category=category, test_stats=test_stats)
     else:
         print("🖥️ Serving DESKTOP template")
-        return render_template('test_interface.html', category=category)
+        return render_template('test_interface.html', category=category, test_stats=test_stats)
 
 @app.route('/submit_test', methods=['POST'])
 @login_required
@@ -1574,29 +1583,68 @@ def admin_add_plan():
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
 
+@app.route('/admin/plans/get/<int:plan_id>', methods=['GET'])
+@login_required
+def admin_get_plan(plan_id):
+    """Get plan data for editing"""
+    if current_user.username != 'admin':
+        return jsonify({'error': 'Access denied'}), 403
+    
+    plan = SubscriptionPlan.query.get_or_404(plan_id)
+    
+    return jsonify({
+        'id': plan.id,
+        'name': plan.name,
+        'plan_type': plan.plan_type,
+        'price': plan.price,
+        'duration_months': plan.duration_months,
+        'description': plan.description or '',
+        'has_unlimited_tests': plan.has_unlimited_tests,
+        'test_credits': plan.test_credits,
+        'max_tests_per_month': plan.max_tests_per_month,
+        'has_download_access': plan.has_download_access,
+        'has_progress_tracking': plan.has_progress_tracking,
+        'has_performance_analytics': plan.has_performance_analytics,
+        'is_featured': plan.is_featured
+    })
+
 @app.route('/admin/plans/edit/<int:plan_id>', methods=['POST'])
 @login_required
 def admin_edit_plan(plan_id):
-    """Edit subscription plan"""
+    """Edit subscription plan with full customization"""
     if current_user.username != 'admin':
         return jsonify({'error': 'Access denied'}), 403
     
     plan = SubscriptionPlan.query.get_or_404(plan_id)
     
     try:
-        plan.name = request.form.get('name')
-        plan.duration_days = int(request.form.get('duration_days'))
-        plan.price = float(request.form.get('price'))
-        plan.currency = request.form.get('currency', 'USD')
-        plan.description = request.form.get('description')
-        plan.is_active = request.form.get('is_active') == 'on'
+        data = request.get_json()
+        
+        plan.name = data.get('name')
+        plan.plan_type = data.get('plan_type', 'subscription')
+        plan.duration_days = int(data.get('duration_days', 0))
+        plan.duration_months = int(data.get('duration_months', 0))
+        plan.price = float(data.get('price'))
+        plan.currency = data.get('currency', 'USD')
+        plan.description = data.get('description', '')
+        
+        # Access Control
+        plan.has_unlimited_tests = data.get('has_unlimited_tests', True)
+        plan.test_credits = int(data.get('test_credits', 0))
+        plan.max_tests_per_month = int(data.get('max_tests_per_month')) if data.get('max_tests_per_month') else None
+        plan.has_download_access = data.get('has_download_access', True)
+        plan.has_progress_tracking = data.get('has_progress_tracking', True)
+        plan.has_performance_analytics = data.get('has_performance_analytics', True)
+        
+        # Display Options
+        plan.is_featured = data.get('is_featured', False)
         
         db.session.commit()
-        flash('Plan updated successfully', 'success')
+        
+        return jsonify({'success': True, 'message': 'Plan updated successfully'}), 200
     except Exception as e:
-        flash(f'Error updating plan: {str(e)}', 'error')
-    
-    return redirect(url_for('admin_plans'))
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
 
 @app.route('/admin/transactions')
 @login_required

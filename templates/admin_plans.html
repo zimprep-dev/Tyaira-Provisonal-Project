@@ -206,9 +206,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function showAddPlanModal() {
+    const form = document.getElementById('planForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
     document.getElementById('planModal').style.display = 'flex';
     document.getElementById('modalTitle').textContent = 'Create New Plan';
-    document.getElementById('planForm').reset();
+    form.reset();
+    delete form.dataset.editId; // Clear edit mode
+    submitBtn.textContent = 'Create Plan';
     
     // Use setTimeout to ensure DOM is ready
     setTimeout(() => {
@@ -314,9 +319,52 @@ function updatePlanSummary() {
     feather.replace();
 }
 
-function editPlan(planId) {
-    // TODO: Load plan data and open modal in edit mode
-    Modal.alert('Edit functionality coming soon!', 'info', 'Edit Plan');
+async function editPlan(planId) {
+    try {
+        // Fetch plan data
+        const response = await fetch(`/admin/plans/get/${planId}`);
+        const plan = await response.json();
+        
+        if (!response.ok) {
+            Modal.alert(plan.error || 'Failed to load plan data', 'error');
+            return;
+        }
+        
+        // Open modal in edit mode
+        document.getElementById('planModal').style.display = 'flex';
+        document.getElementById('modalTitle').textContent = 'Edit Plan';
+        
+        // Populate form
+        document.getElementById('planName').value = plan.name;
+        document.getElementById('planType').value = plan.plan_type;
+        document.getElementById('price').value = plan.price;
+        document.getElementById('durationMonths').value = plan.duration_months;
+        document.getElementById('description').value = plan.description;
+        
+        // Checkboxes
+        document.getElementById('unlimitedTests').checked = plan.has_unlimited_tests;
+        document.getElementById('testCredits').value = plan.test_credits;
+        document.getElementById('maxTests').value = plan.max_tests_per_month || '';
+        document.getElementById('downloadAccess').checked = plan.has_download_access;
+        document.getElementById('progressTracking').checked = plan.has_progress_tracking;
+        document.getElementById('analytics').checked = plan.has_performance_analytics;
+        document.getElementById('featured').checked = plan.is_featured;
+        
+        // Set form action to edit
+        const form = document.getElementById('planForm');
+        form.dataset.editId = planId;
+        
+        // Update button text
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.textContent = 'Update Plan';
+        
+        // Handle plan type specific fields
+        handlePlanTypeChange();
+        
+        feather.replace();
+    } catch (error) {
+        Modal.alert('Error loading plan: ' + error.message, 'error');
+    }
 }
 
 function togglePlan(planId, isActive) {
@@ -336,7 +384,11 @@ function togglePlan(planId, isActive) {
 document.getElementById('planForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
+    const form = e.target;
+    const editId = form.dataset.editId;
+    const isEditing = !!editId;
+    
+    const formData = new FormData(form);
     const planData = {};
     
     // Convert FormData to object
@@ -359,7 +411,8 @@ document.getElementById('planForm')?.addEventListener('submit', async (e) => {
     }
     
     try {
-        const response = await fetch('/admin/plans/add', {
+        const url = isEditing ? `/admin/plans/edit/${editId}` : '/admin/plans/add';
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -370,14 +423,14 @@ document.getElementById('planForm')?.addEventListener('submit', async (e) => {
         const result = await response.json();
         
         if (response.ok) {
-            Modal.alert('Plan created successfully!', 'success');
+            Modal.alert(isEditing ? 'Plan updated successfully!' : 'Plan created successfully!', 'success');
             closePlanModal();
             location.reload();
         } else {
-            Modal.alert(result.error || 'Failed to create plan', 'error');
+            Modal.alert(result.error || `Failed to ${isEditing ? 'update' : 'create'} plan`, 'error');
         }
     } catch (error) {
-        Modal.alert('Error creating plan: ' + error.message, 'error');
+        Modal.alert(`Error ${isEditing ? 'updating' : 'creating'} plan: ` + error.message, 'error');
     }
 });
 </script>

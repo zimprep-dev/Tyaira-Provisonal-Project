@@ -33,39 +33,87 @@
     </div>
     {% endif %}
 
-    <!-- Premium Plan Card -->
+    <!-- Available Plans -->
     {% if not has_subscription %}
-    <div class="dashboard-actions">
-        <div class="action-card featured">
-            <h3><i data-feather="zap" class="action-icon"></i> Premium Monthly Subscription</h3>
-            <div class="subscription-price">
-                <span class="price-amount">$5.00</span>
-                <span class="price-period">/month</span>
+    <div class="plans-container">
+        {% for plan in plans %}
+        <div class="plan-card {% if plan.is_featured %}featured{% endif %}">
+            <div class="plan-header">
+                <h3><i data-feather="{% if plan.plan_type == 'usage' %}shopping-cart{% else %}zap{% endif %}" class="action-icon"></i> {{ plan.name }}</h3>
+                {% if plan.is_featured %}
+                <span class="featured-badge"><i data-feather="star"></i> Popular</span>
+                {% endif %}
             </div>
+            
+            <div class="subscription-price">
+                <span class="price-amount">${{ "%.2f"|format(plan.price) }}</span>
+                <span class="price-period">
+                    {% if plan.plan_type == 'usage' %}
+                        one-time
+                    {% else %}
+                        / {{ plan.duration_months }} {% if plan.duration_months == 1 %}month{% else %}months{% endif %}
+                    {% endif %}
+                </span>
+            </div>
+            
+            {% if plan.description %}
+            <p class="plan-description">{{ plan.description }}</p>
+            {% endif %}
             
             <div class="subscription-features">
                 <ul>
+                    <!-- Test Access -->
+                    {% if plan.has_unlimited_tests %}
                     <li><i data-feather="check"></i> Unlimited practice tests</li>
+                    {% elif plan.test_credits > 0 %}
+                    <li><i data-feather="check"></i> {{ plan.test_credits }} test credits</li>
+                    {% elif plan.max_tests_per_month %}
+                    <li><i data-feather="check"></i> Up to {{ plan.max_tests_per_month }} tests/month</li>
+                    {% else %}
+                    <li><i data-feather="check"></i> Limited test access</li>
+                    {% endif %}
+                    
+                    <!-- Always show question bank -->
                     <li><i data-feather="check"></i> 400+ questions database</li>
-                    <li><i data-feather="check"></i> Detailed explanations</li>
-                    <li><i data-feather="check"></i> Progress tracking & analytics</li>
+                    
+                    <!-- PDF Downloads -->
+                    {% if plan.has_download_access %}
+                    <li><i data-feather="check"></i> PDF downloads</li>
+                    {% endif %}
+                    
+                    <!-- Progress Tracking -->
+                    {% if plan.has_progress_tracking %}
+                    <li><i data-feather="check"></i> Progress tracking</li>
+                    {% endif %}
+                    
+                    <!-- Performance Analytics -->
+                    {% if plan.has_performance_analytics %}
+                    <li><i data-feather="check"></i> Performance analytics</li>
+                    {% endif %}
+                    
+                    <!-- Always mobile friendly -->
                     <li><i data-feather="check"></i> Mobile friendly interface</li>
-                    <li><i data-feather="check"></i> No advertisements</li>
                 </ul>
             </div>
 
-            {% if plans and plans|length > 0 %}
-            <form method="POST" action="{{ url_for('initiate_payment', plan_id=plans[0].id) }}">
+            <form method="POST" action="{{ url_for('initiate_payment', plan_id=plan.id) }}">
                 <button type="submit" class="btn btn-primary btn-large">
-                    <i data-feather="credit-card"></i> Subscribe Now
+                    <i data-feather="credit-card"></i> 
+                    {% if plan.plan_type == 'usage' %}Buy Now{% else %}Subscribe Now{% endif %}
                 </button>
             </form>
-            {% endif %}
 
             <div class="payment-security">
                 <small><i data-feather="lock"></i> Secure payment via Paynow • Instant activation</small>
             </div>
         </div>
+        {% endfor %}
+        
+        {% if not plans or plans|length == 0 %}
+        <div class="action-card">
+            <p style="text-align: center; color: #666;">No subscription plans available at the moment.</p>
+        </div>
+        {% endif %}
     </div>
     {% else %}
     <div class="dashboard-actions">
@@ -104,6 +152,70 @@
 </div>
 
 <style>
+.plans-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.plan-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 2rem;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.plan-card.featured {
+    border-color: #ffc107;
+    background: linear-gradient(to bottom, #fffbeb 0%, white 15%);
+}
+
+.plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.plan-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.featured-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #ffc107;
+    color: #000;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.featured-badge i {
+    width: 14px;
+    height: 14px;
+}
+
+.plan-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
 .subscription-price {
     text-align: center;
     margin: 20px 0;
@@ -140,6 +252,15 @@
     color: #28a745;
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
+}
+
+.subscription-features li.feature-disabled {
+    opacity: 0.5;
+}
+
+.subscription-features li.feature-disabled i {
+    color: #dc3545;
 }
 
 .btn-large {
@@ -162,6 +283,12 @@
     width: 16px;
     height: 16px;
     vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .plans-container {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 {% endblock %}
