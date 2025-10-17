@@ -3,7 +3,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Question, AnswerOption, TestResult, Answer, TestCategory, UploadedFile, TestSession, TestConfig, ActivityLog, SubscriptionPlan, PendingPayment, Transaction
-from sqlalchemy import func
+from sqlalchemy import func, case
 from datetime import datetime, timedelta, timezone
 from dateutil.relativedelta import relativedelta
 import random

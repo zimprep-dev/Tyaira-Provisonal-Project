@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Plans - Admin{% endblock %}
+
+{% block content %}
+<div class="cms-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i data-feather="package"></i> Subscription Plans</h1>
+            <p>Manage subscription plans and pricing</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+                <i data-feather="arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Plans Grid -->
+    <div class="plans-grid">
+        {% for plan in plans %}
+        <div class="plan-card {% if plan.is_featured %}featured{% endif %}">
+            <div class="plan-header">
+                <h3>{{ plan.name }}</h3>
+                {% if plan.is_featured %}
+                <span class="badge badge-featured"><i data-feather="star"></i> Featured</span>
+                {% endif %}
+            </div>
+            
+            <div class="plan-price">
+                <span class="currency">$</span>
+                <span class="amount">{{ plan.price }}</span>
+                <span class="period">/ {{ plan.duration_months }} {% if plan.duration_months == 1 %}month{% else %}months{% endif %}</span>
+            </div>
+
+            <div class="plan-description">
+                {{ plan.description or 'No description' }}
+            </div>
+
+            <div class="plan-features">
+                <h4>Features:</h4>
+                <ul>
+                    <li><i data-feather="check"></i> Unlimited Practice Tests</li>
+                    <li><i data-feather="check"></i> Full Question Bank Access</li>
+                    <li><i data-feather="check"></i> Progress Tracking</li>
+                    <li><i data-feather="check"></i> Performance Analytics</li>
+                    <li><i data-feather="check"></i> PDF Downloads</li>
+                    {% if plan.duration_months > 1 %}
+                    <li><i data-feather="check"></i> Extended Access ({{ plan.duration_months }} months)</li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="plan-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Active Subscribers</span>
+                    <span class="stat-value">{{ plan.subscribers|length }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-value">
+                        {% if plan.is_active %}
+                        <span class="badge badge-success">Active</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Inactive</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="plan-actions">
+                <button class="btn btn-primary btn-sm" onclick="editPlan({{ plan.id }})">
+                    <i data-feather="edit-2"></i> Edit
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="togglePlan({{ plan.id }}, {{ plan.is_active|lower }})">
+                    {% if plan.is_active %}
+                    <i data-feather="eye-off"></i> Deactivate
+                    {% else %}
+                    <i data-feather="eye"></i> Activate
+                    {% endif %}
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add New Plan Button -->
+    <div class="add-plan-section">
+        <button class="btn btn-primary" onclick="showAddPlanModal()">
+            <i data-feather="plus"></i> Add New Plan
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    feather.replace();
+});
+
+function editPlan(planId) {
+    Modal.alert(
+        `Edit functionality for plan ID: ${planId}<br><br>This feature allows you to:<br>- Update plan name and description<br>- Change pricing<br>- Modify duration<br>- Toggle featured status`,
+        'info',
+        'Edit Plan'
+    );
+}
+
+function togglePlan(planId, isActive) {
+    const action = isActive ? 'deactivate' : 'activate';
+    Modal.confirm(
+        `Are you sure you want to ${action} this plan?`,
+        `${action.charAt(0).toUpperCase() + action.slice(1)} Plan`
+    ).then(confirmed => {
+        if (confirmed) {
+            Modal.alert(`Plan ${action}d successfully!`, 'success');
+        }
+    });
+}
+
+function showAddPlanModal() {
+    Modal.alert(
+        `Create a new subscription plan:<br><br>Required fields:<br>- Plan name<br>- Price<br>- Duration (months)<br>- Description<br>- Features list`,
+        'info',
+        'Add New Plan'
+    );
+}
+</script>
+
+<style>
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.plan-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.plan-card:hover {
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    transform: translateY(-4px);
+}
+
+.plan-card.featured {
+    border-color: #fbbf24;
+    background: linear-gradient(to bottom, #fffbeb 0%, white 20%);
+}
+
+.plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.plan-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #2d3748;
+}
+
+.plan-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+}
+
+.plan-price .currency {
+    font-size: 1.5rem;
+    color: #4a5568;
+}
+
+.plan-price .amount {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.plan-price .period {
+    font-size: 1rem;
+    color: #718096;
+}
+
+.plan-description {
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+.plan-features h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    color: #2d3748;
+}
+
+.plan-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.plan-features li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    color: #4a5568;
+}
+
+.plan-features li i {
+    color: #48bb78;
+    width: 16px;
+    height: 16px;
+}
+
+.plan-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.plan-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.plan-actions button {
+    flex: 1;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.add-plan-section {
+    text-align: center;
+    padding: 2rem;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-featured {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-success {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.badge-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.badge i {
+    width: 12px;
+    height: 12px;
+}
+
+@media (max-width: 768px) {
+    .plans-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

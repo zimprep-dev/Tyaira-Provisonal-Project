@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction Management - Admin{% endblock %}
+
+{% block content %}
+<div class="cms-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i data-feather="credit-card"></i> Transaction Management</h1>
+            <p>View all payment transactions and revenue details</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+                <i data-feather="arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon"><i data-feather="dollar-sign"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">${{ "%.2f"|format(total_revenue) }}</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i data-feather="check-circle"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ total_transactions }}</div>
+                <div class="stat-label">Completed Transactions</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i data-feather="clock"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ pending_payments }}</div>
+                <div class="stat-label">Pending Payments</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="table-container">
+        <div class="table-header">
+            <h2><i data-feather="list"></i> All Transactions</h2>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>User</th>
+                        <th>Plan</th>
+                        <th>Amount</th>
+                        <th>Payment Method</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td><code>{{ transaction.transaction_id }}</code></td>
+                        <td>{{ transaction.user.username if transaction.user else 'N/A' }}</td>
+                        <td>{{ transaction.plan_name or 'N/A' }}</td>
+                        <td><strong>${{ "%.2f"|format(transaction.amount) }}</strong></td>
+                        <td>{{ transaction.payment_method or 'Paynow' }}</td>
+                        <td>
+                            {% if transaction.status == 'completed' %}
+                            <span class="badge badge-success">Completed</span>
+                            {% elif transaction.status == 'pending' %}
+                            <span class="badge badge-warning">Pending</span>
+                            {% elif transaction.status == 'failed' %}
+                            <span class="badge badge-danger">Failed</span>
+                            {% else %}
+                            <span class="badge badge-secondary">{{ transaction.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.table-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table-header h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead {
+    background: #f7fafc;
+}
+
+.data-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.875rem;
+}
+
+.data-table td {
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.data-table tbody tr:hover {
+    background: #f7fafc;
+}
+
+code {
+    background: #edf2f7;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.badge-warning {
+    background: #feebc8;
+    color: #744210;
+}
+
+.badge-danger {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.badge-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+</style>
+{% endblock %}
