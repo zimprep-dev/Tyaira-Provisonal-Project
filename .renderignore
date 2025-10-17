@@ -1,0 +1,74 @@
+# Render ignore file
+# Files and directories to exclude from Render deployment
+
+# Environment files
+.env.local
+.env.development
+.env.production
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Database
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (except deployment guides)
+*.md
+!README.md
+!RENDER_DEPLOYMENT.md
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Vercel-specific files (not needed on Render)
+vercel.json
+.vercel/
+.vercelignore
+api/
+
+# AWS/Other cloud configs (not needed on Render)
+AWS_DEPLOYMENT.md
+nginx.conf
+tyaira.service
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+.cache/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Uploads (if stored locally - but using Cloudinary)
+uploads/
+!uploads/.gitkeep
