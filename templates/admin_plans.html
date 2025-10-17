@@ -66,17 +66,250 @@
     </div>
 </div>
 
+<!-- Plan Creation/Edit Modal -->
+<div id="planModal" class="plan-modal">
+    <div class="plan-modal-content">
+        <div class="plan-modal-header">
+            <h2 id="modalTitle">Create New Plan</h2>
+            <button class="close-btn" onclick="closePlanModal()">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        
+        <form id="planForm" class="plan-form">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h3>Basic Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="planName">Plan Name <span class="required">*</span></label>
+                        <input type="text" id="planName" name="name" required placeholder="e.g., Premium Monthly">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="planType">Plan Type <span class="required">*</span></label>
+                        <select id="planType" name="plan_type" required onchange="handlePlanTypeChange()">
+                            <option value="subscription">Time-Based Subscription</option>
+                            <option value="usage">Usage-Based (Test Credits)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="price">Price (USD) <span class="required">*</span></label>
+                        <input type="number" id="price" name="price" step="0.01" min="0" required placeholder="5.00">
+                    </div>
+                    
+                    <div class="form-group" id="durationGroup">
+                        <label for="durationMonths">Duration (Months) <span class="required">*</span></label>
+                        <input type="number" id="durationMonths" name="duration_months" min="1" required value="1">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3" placeholder="Brief description of this plan..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Access Control -->
+            <div class="form-section">
+                <h3>Access Control & Features</h3>
+                
+                <div class="form-row" id="testAccessRow">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="unlimitedTests" name="has_unlimited_tests" checked onchange="handleUnlimitedTestsChange()">
+                            <span>Unlimited Tests</span>
+                        </label>
+                        <small>User can take unlimited practice tests</small>
+                    </div>
+                </div>
+                
+                <div class="form-row" id="creditsRow" style="display: none;">
+                    <div class="form-group">
+                        <label for="testCredits">Test Credits</label>
+                        <input type="number" id="testCredits" name="test_credits" min="0" value="0" placeholder="e.g., 10">
+                        <small>Number of tests included (for usage-based plans)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maxTests">Max Tests Per Month</label>
+                        <input type="number" id="maxTests" name="max_tests_per_month" min="1" placeholder="e.g., 50">
+                        <small>Monthly test limit (leave empty for unlimited)</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="downloadAccess" name="has_download_access" checked>
+                            <span>PDF Download Access</span>
+                        </label>
+                        <small>User can download study materials and PDFs</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="progressTracking" name="has_progress_tracking" checked>
+                            <span>Progress Tracking</span>
+                        </label>
+                        <small>Track user progress and history</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="analytics" name="has_performance_analytics" checked>
+                            <span>Performance Analytics</span>
+                        </label>
+                        <small>Detailed performance analytics and insights</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="featured" name="is_featured">
+                            <span>Featured Plan</span>
+                        </label>
+                        <small>Highlight this plan with a badge</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Plan Summary -->
+            <div class="form-section plan-summary">
+                <h3>Plan Summary</h3>
+                <div id="planSummary" class="summary-content">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closePlanModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Plan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     feather.replace();
+    updatePlanSummary();
+    
+    // Add event listeners for live summary update
+    document.getElementById('planForm').addEventListener('input', updatePlanSummary);
+    document.getElementById('planForm').addEventListener('change', updatePlanSummary);
 });
 
+function showAddPlanModal() {
+    document.getElementById('planModal').style.display = 'flex';
+    document.getElementById('modalTitle').textContent = 'Create New Plan';
+    document.getElementById('planForm').reset();
+    handlePlanTypeChange();
+    feather.replace();
+}
+
+function closePlanModal() {
+    document.getElementById('planModal').style.display = 'none';
+}
+
+function handlePlanTypeChange() {
+    const planType = document.getElementById('planType').value;
+    const durationGroup = document.getElementById('durationGroup');
+    const testAccessRow = document.getElementById('testAccessRow');
+    const creditsRow = document.getElementById('creditsRow');
+    
+    if (planType === 'usage') {
+        // Usage-based plan
+        durationGroup.style.display = 'none';
+        document.getElementById('durationMonths').value = 0;
+        document.getElementById('unlimitedTests').checked = false;
+        document.getElementById('unlimitedTests').disabled = true;
+        creditsRow.style.display = 'flex';
+        testAccessRow.style.display = 'none';
+    } else {
+        // Subscription plan
+        durationGroup.style.display = 'block';
+        document.getElementById('durationMonths').value = 1;
+        document.getElementById('unlimitedTests').disabled = false;
+        testAccessRow.style.display = 'flex';
+        handleUnlimitedTestsChange();
+    }
+    
+    updatePlanSummary();
+}
+
+function handleUnlimitedTestsChange() {
+    const unlimited = document.getElementById('unlimitedTests').checked;
+    const creditsRow = document.getElementById('creditsRow');
+    
+    if (unlimited) {
+        creditsRow.style.display = 'none';
+        document.getElementById('testCredits').value = 0;
+        document.getElementById('maxTests').value = '';
+    } else {
+        creditsRow.style.display = 'flex';
+    }
+    
+    updatePlanSummary();
+}
+
+function updatePlanSummary() {
+    const planType = document.getElementById('planType').value;
+    const name = document.getElementById('planName').value || '[Plan Name]';
+    const price = document.getElementById('price').value || '0.00';
+    const duration = document.getElementById('durationMonths').value;
+    const unlimited = document.getElementById('unlimitedTests').checked;
+    const credits = document.getElementById('testCredits').value;
+    const maxTests = document.getElementById('maxTests').value;
+    const hasDownloads = document.getElementById('downloadAccess').checked;
+    const hasTracking = document.getElementById('progressTracking').checked;
+    const hasAnalytics = document.getElementById('analytics').checked;
+    
+    let summaryHTML = `
+        <div class="summary-item">
+            <strong>${name}</strong>
+            <span class="summary-price">$${price}</span>
+        </div>
+    `;
+    
+    if (planType === 'subscription') {
+        summaryHTML += `<div class="summary-item"><span>Duration:</span><span>${duration} ${duration == 1 ? 'month' : 'months'}</span></div>`;
+    } else {
+        summaryHTML += `<div class="summary-item"><span>Type:</span><span>One-time purchase</span></div>`;
+    }
+    
+    // Test access
+    if (unlimited && planType === 'subscription') {
+        summaryHTML += `<div class="summary-item"><i data-feather="check" class="summary-icon-check"></i><span>Unlimited tests</span></div>`;
+    } else if (credits && planType === 'usage') {
+        summaryHTML += `<div class="summary-item"><i data-feather="check" class="summary-icon-check"></i><span>${credits} test credits</span></div>`;
+    } else if (maxTests) {
+        summaryHTML += `<div class="summary-item"><i data-feather="check" class="summary-icon-check"></i><span>Up to ${maxTests} tests/month</span></div>`;
+    }
+    
+    // Features
+    if (hasDownloads) {
+        summaryHTML += `<div class="summary-item"><i data-feather="check" class="summary-icon-check"></i><span>PDF Downloads</span></div>`;
+    }
+    if (hasTracking) {
+        summaryHTML += `<div class="summary-item"><i data-feather="check" class="summary-icon-check"></i><span>Progress Tracking</span></div>`;
+    }
+    if (hasAnalytics) {
+        summaryHTML += `<div class="summary-item"><i data-feather="check" class="summary-icon-check"></i><span>Performance Analytics</span></div>`;
+    }
+    
+    document.getElementById('planSummary').innerHTML = summaryHTML;
+    feather.replace();
+}
+
 function editPlan(planId) {
-    Modal.alert(
-        `Edit functionality for plan ID: ${planId}<br><br>This feature allows you to:<br>- Update plan name and description<br>- Change pricing<br>- Modify duration<br>- Toggle featured status`,
-        'info',
-        'Edit Plan'
-    );
+    // TODO: Load plan data and open modal in edit mode
+    Modal.alert('Edit functionality coming soon!', 'info', 'Edit Plan');
 }
 
 function togglePlan(planId, isActive) {
@@ -86,18 +319,60 @@ function togglePlan(planId, isActive) {
         `${action.charAt(0).toUpperCase() + action.slice(1)} Plan`
     ).then(confirmed => {
         if (confirmed) {
+            // TODO: Implement actual toggle
             Modal.alert(`Plan ${action}d successfully!`, 'success');
         }
     });
 }
 
-function showAddPlanModal() {
-    Modal.alert(
-        `Create a new subscription plan:<br><br>Required fields:<br>- Plan name<br>- Price<br>- Duration (months)<br>- Description<br>- Features list`,
-        'info',
-        'Add New Plan'
-    );
-}
+// Form submission
+document.getElementById('planForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const planData = {};
+    
+    // Convert FormData to object
+    formData.forEach((value, key) => {
+        if (key.startsWith('has_') || key === 'is_featured') {
+            planData[key] = formData.get(key) !== null;
+        } else if (key === 'price' || key.includes('duration') || key.includes('credits') || key.includes('max_')) {
+            planData[key] = parseFloat(value) || 0;
+        } else {
+            planData[key] = value;
+        }
+    });
+    
+    // Calculate duration_days from duration_months
+    if (planData.plan_type === 'subscription') {
+        planData.duration_days = planData.duration_months * 30;
+    } else {
+        planData.duration_days = 0;
+        planData.duration_months = 0;
+    }
+    
+    try {
+        const response = await fetch('/admin/plans/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(planData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            Modal.alert('Plan created successfully!', 'success');
+            closePlanModal();
+            location.reload();
+        } else {
+            Modal.alert(result.error || 'Failed to create plan', 'error');
+        }
+    } catch (error) {
+        Modal.alert('Error creating plan: ' + error.message, 'error');
+    }
+});
 </script>
 
 <style>
@@ -229,9 +504,224 @@ function showAddPlanModal() {
     height: 12px;
 }
 
+/* Plan Modal Styles */
+.plan-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.plan-modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.plan-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.plan-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #2d3748;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: #718096;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.close-btn:hover {
+    background: #f7fafc;
+    color: #2d3748;
+}
+
+.close-btn i {
+    width: 20px;
+    height: 20px;
+}
+
+.plan-form {
+    padding: 2rem;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.125rem;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-row:last-child {
+    margin-bottom: 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.form-group small {
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.required {
+    color: #e53e3e;
+}
+
+.plan-summary {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1.5rem !important;
+}
+
+.summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.summary-item:first-child {
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.summary-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #48bb78;
+}
+
+.summary-icon-check {
+    width: 16px;
+    height: 16px;
+    color: #48bb78;
+    margin-right: 0.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
 @media (max-width: 768px) {
     .plans-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .plan-modal {
+        padding: 1rem;
+    }
+    
+    .plan-modal-content {
+        max-height: 95vh;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+    
+    .modal-actions button {
+        width: 100%;
     }
 }
 </style>

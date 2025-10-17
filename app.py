@@ -1544,27 +1544,42 @@ def admin_plans():
 @app.route('/admin/plans/add', methods=['POST'])
 @login_required
 def admin_add_plan():
-    """Add new subscription plan"""
+    """Add new subscription plan with full customization"""
     if current_user.username != 'admin':
         return jsonify({'error': 'Access denied'}), 403
     
     try:
+        data = request.get_json()
+        
         plan = SubscriptionPlan(
-            name=request.form.get('name'),
-            duration_days=int(request.form.get('duration_days')),
-            price=float(request.form.get('price')),
-            currency=request.form.get('currency', 'USD'),
-            description=request.form.get('description'),
-            is_active=request.form.get('is_active') == 'on'
+            name=data.get('name'),
+            plan_type=data.get('plan_type', 'subscription'),
+            duration_days=int(data.get('duration_days', 0)),
+            duration_months=int(data.get('duration_months', 0)),
+            price=float(data.get('price')),
+            currency=data.get('currency', 'USD'),
+            description=data.get('description', ''),
+            
+            # Access Control
+            has_unlimited_tests=data.get('has_unlimited_tests', True),
+            test_credits=int(data.get('test_credits', 0)),
+            max_tests_per_month=int(data.get('max_tests_per_month')) if data.get('max_tests_per_month') else None,
+            has_download_access=data.get('has_download_access', True),
+            has_progress_tracking=data.get('has_progress_tracking', True),
+            has_performance_analytics=data.get('has_performance_analytics', True),
+            
+            # Display Options
+            is_featured=data.get('is_featured', False),
+            is_active=True
         )
+        
         db.session.add(plan)
         db.session.commit()
         
-        flash('Subscription plan added successfully', 'success')
-        return redirect(url_for('admin_plans'))
+        return jsonify({'success': True, 'message': 'Plan created successfully', 'plan_id': plan.id}), 200
     except Exception as e:
-        flash(f'Error adding plan: {str(e)}', 'error')
-        return redirect(url_for('admin_plans'))
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
 
 @app.route('/admin/plans/edit/<int:plan_id>', methods=['POST'])
 @login_required

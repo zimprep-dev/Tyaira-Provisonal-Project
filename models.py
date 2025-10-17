@@ -137,12 +137,23 @@ class ActivityLog(db.Model):
 # Payment Models
 class SubscriptionPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)  # e.g., "1 Month", "3 Months", "12 Months"
+    name = db.Column(db.String(100), nullable=False)  # e.g., "1 Month", "3 Months", "Test Credits"
+    plan_type = db.Column(db.String(20), default='subscription')  # 'subscription' or 'usage'
     duration_days = db.Column(db.Integer, nullable=False)  # 30, 90, 365
     duration_months = db.Column(db.Integer, nullable=False, default=1)  # 1, 3, 12
     price = db.Column(db.Float, nullable=False)  # in USD
     currency = db.Column(db.String(3), default='USD')
     description = db.Column(db.Text)
+    
+    # Access Control Features
+    has_unlimited_tests = db.Column(db.Boolean, default=True)
+    test_credits = db.Column(db.Integer, default=0)  # Number of tests for usage-based plans
+    max_tests_per_month = db.Column(db.Integer)  # Monthly test limit (null = unlimited)
+    has_download_access = db.Column(db.Boolean, default=True)
+    has_progress_tracking = db.Column(db.Boolean, default=True)
+    has_performance_analytics = db.Column(db.Boolean, default=True)
+    
+    # Display Options
     is_active = db.Column(db.Boolean, default=True)
     is_featured = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
