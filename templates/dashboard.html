@@ -3,6 +3,40 @@
 {% block title %}Dashboard - Driver Testing Platform{% endblock %}
 
 {% block content %}
+<style>
+.stat-card-clickable {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card-clickable:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+}
+
+.stat-card-clickable:hover h3,
+.stat-card-clickable:hover .stat-number,
+.stat-card-clickable:hover small {
+    color: white !important;
+}
+
+.stat-card-clickable:active {
+    transform: translateY(-2px);
+}
+
+.stat-card-clickable small {
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.stat-card-clickable:hover small {
+    opacity: 1;
+}
+</style>
 <div class="dashboard">
     <div class="dashboard-header">
         <h1><i data-feather="user" class="dashboard-icon"></i> Welcome, {{ user.username }}!</h1>
@@ -29,10 +63,13 @@
             <div class="stat-number">{{ user.downloads_count }}</div>
         </div>
         {% if user.has_active_subscription() %}
-            <div class="stat-card">
+            <a href="{{ url_for('subscription_page') }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit;">
                 <h3><i data-feather="star" class="stat-icon"></i> Subscription</h3>
                 <div class="stat-number">{% if user.is_subscriber %}Active{% else %}Ending Soon{% endif %}</div>
-            </div>
+                <small style="color: #666; font-size: 0.85rem; margin-top: 5px; display: block;">
+                    <i data-feather="arrow-right" style="width: 14px; height: 14px;"></i> View details
+                </small>
+            </a>
         {% endif %}
     </div>
 
