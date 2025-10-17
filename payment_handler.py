@@ -103,20 +103,37 @@ class PaynowHandler:
         Returns: dict with payment_url and poll_url or None if failed
         """
         try:
+            print(f"\n{'='*60}")
+            print(f"💳 PAYMENT CREATION STARTED")
+            print(f"{'='*60}")
+            print(f"Reference: {reference}")
+            print(f"User Email: {user.email}")
+            print(f"Plan: {plan.name}")
+            print(f"Amount: ${plan.price} {plan.currency}")
+            print(f"Return URL: {self.return_url}")
+            print(f"Result URL: {self.result_url}")
+            print(f"Production Mode: {self.is_production}")
+            print(f"{'='*60}\n")
+            
             # Create payment using Paynow SDK
             payment = self.paynow.create_payment(reference, user.email)
+            print(f"✅ Payment object created")
             
             # Add item to payment
             payment.add(f"{plan.name} Subscription", plan.price)
+            print(f"✅ Item added to payment: {plan.name} - ${plan.price}")
             
             # Send payment request to Paynow
             if self.is_production:
                 # Production: Send to real Paynow
-                print(f"💳 Sending payment to Paynow for {reference}")
+                print(f"💳 Sending payment to REAL Paynow API...")
+                print(f"   Integration ID: {self.integration_id}")
+                print(f"   Integration Key: {self.integration_key[:10]}...")
                 response = self.paynow.send(payment)
+                print(f"📡 Response received from Paynow")
             else:
                 # Development: Use mock gateway
-                print(f"🧪 Using mock payment gateway for {reference}")
+                print(f"🧪 Using MOCK payment gateway (localhost mode)")
                 return {
                     'success': True,
                     'payment_url': f'{self.base_url}/payment/mock?ref={reference}',
@@ -125,28 +142,58 @@ class PaynowHandler:
             
             # Check if payment initiation was successful
             if response.success:
-                print(f"✅ Payment created successfully: {response.redirect_url}")
+                print(f"\n{'='*60}")
+                print(f"✅ PAYMENT CREATED SUCCESSFULLY")
+                print(f"{'='*60}")
+                print(f"Redirect URL: {response.redirect_url}")
+                print(f"Poll URL: {response.poll_url}")
+                print(f"{'='*60}\n")
                 return {
                     'success': True,
                     'payment_url': response.redirect_url,  # URL to redirect user to
                     'poll_url': response.poll_url  # URL to check payment status
                 }
             else:
-                error_msg = response.errors if hasattr(response, 'errors') else 'Payment initiation failed'
-                print(f"❌ Paynow error: {error_msg}")
-                print(f"   Response object: {response.__dict__}")
+                # Payment failed - gather detailed error information
+                print(f"\n{'='*60}")
+                print(f"❌ PAYNOW PAYMENT FAILED")
+                print(f"{'='*60}")
+                
+                # Try to get error from multiple sources
+                error_msg = 'Payment initiation failed'
+                if hasattr(response, 'errors'):
+                    error_msg = response.errors
+                    print(f"Error from response.errors: {error_msg}")
+                if hasattr(response, 'error'):
+                    error_msg = response.error
+                    print(f"Error from response.error: {error_msg}")
+                
+                # Show all response attributes for debugging
+                print(f"Response attributes:")
+                for attr, value in response.__dict__.items():
+                    print(f"   {attr}: {value}")
+                
+                print(f"Response success: {response.success}")
+                print(f"{'='*60}\n")
+                
                 return {
                     'success': False,
                     'error': error_msg
                 }
                 
         except Exception as e:
-            print(f"❌ Exception during payment creation: {str(e)}")
+            print(f"\n{'='*60}")
+            print(f"❌ EXCEPTION DURING PAYMENT CREATION")
+            print(f"{'='*60}")
+            print(f"Exception type: {type(e).__name__}")
+            print(f"Exception message: {str(e)}")
+            print(f"{'='*60}")
             import traceback
             traceback.print_exc()
+            print(f"{'='*60}\n")
             return {
                 'success': False,
-                'error': str(e)
+                'error': f"{type(e).__name__}: {str(e)}"
             }
     
     def verify_payment(self, reference, status, paynow_reference=None, hash_value=None):

@@ -1311,8 +1311,17 @@ def initiate_payment(plan_id):
     # Generate unique reference
     reference = f"TYA-{current_user.id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
     
+    # Log payment initiation attempt
+    app.logger.info(f"🔄 Initiating payment for user {current_user.username} (ID: {current_user.id})")
+    app.logger.info(f"   Plan: {plan.name} (${plan.price})")
+    app.logger.info(f"   Reference: {reference}")
+    app.logger.info(f"   User email: {current_user.email}")
+    
     # Create payment with Paynow
     result = payment_handler.create_payment(current_user, plan, reference)
+    
+    # Log the full result for debugging
+    app.logger.info(f"📦 Payment creation result: {result}")
     
     if result['success']:
         # Save pending payment in database
@@ -1337,10 +1346,17 @@ def initiate_payment(plan_id):
         db.session.add(log)
         db.session.commit()
         
+        app.logger.info(f"✅ Payment initiated successfully, redirecting to: {result['payment_url']}")
+        
         # Redirect user to Paynow payment page
         return redirect(result['payment_url'])
     else:
-        flash(f"Payment initialization failed: {result.get('error', 'Unknown error')}", 'error')
+        error_detail = result.get('error', 'Unknown error')
+        app.logger.error(f"❌ Payment initialization failed: {error_detail}")
+        app.logger.error(f"   Full result object: {result}")
+        
+        # Show detailed error to user
+        flash(f"Payment initialization failed: {error_detail}. Please try again or contact support.", 'error')
         return redirect(url_for('subscription_page'))
 
 @app.route('/payment/notify', methods=['POST', 'GET'])
@@ -1479,9 +1495,8 @@ def check_payment(reference):
 @app.route('/payment/mock')
 def mock_payment():
     """Mock payment page for testing (development only)"""
-    # Disable mock payment in production (Vercel or when BASE_URL is set)
-    if os.getenv('VERCEL') or os.getenv('BASE_URL'):
-        return 'Mock payment not available in production', 404
+    if os.getenv('FLASK_ENV') == 'production':
+        return 'Not available', 404
     
     reference = request.args.get('ref')
     return render_template('mock_payment.html', reference=reference)
