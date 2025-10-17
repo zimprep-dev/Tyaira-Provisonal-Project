@@ -18,7 +18,8 @@ class PaynowHandler:
         self.return_url = f"{self.base_url}/payment/return"
         self.result_url = f"{self.base_url}/payment/notify"
         
-        # Determine if we're in production (Vercel or explicitly set)
+        # Determine if we should use real Paynow or mock
+        # Use real Paynow on Vercel/when BASE_URL is set, otherwise use mock for localhost
         self.is_production = bool(os.getenv('VERCEL')) or bool(os.getenv('BASE_URL'))
         
         # Log the detected URLs for debugging
@@ -27,6 +28,7 @@ class PaynowHandler:
         print(f"   Return URL: {self.return_url}")
         print(f"   Result URL: {self.result_url}")
         print(f"   Production Mode: {self.is_production}")
+        print(f"   Integration ID: {self.integration_id}")
         
         # Initialize Paynow SDK
         self.paynow = Paynow(
@@ -123,18 +125,25 @@ class PaynowHandler:
             
             # Check if payment initiation was successful
             if response.success:
+                print(f"✅ Payment created successfully: {response.redirect_url}")
                 return {
                     'success': True,
                     'payment_url': response.redirect_url,  # URL to redirect user to
                     'poll_url': response.poll_url  # URL to check payment status
                 }
             else:
+                error_msg = response.errors if hasattr(response, 'errors') else 'Payment initiation failed'
+                print(f"❌ Paynow error: {error_msg}")
+                print(f"   Response object: {response.__dict__}")
                 return {
                     'success': False,
-                    'error': response.errors if hasattr(response, 'errors') else 'Payment initiation failed'
+                    'error': error_msg
                 }
                 
         except Exception as e:
+            print(f"❌ Exception during payment creation: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return {
                 'success': False,
                 'error': str(e)
