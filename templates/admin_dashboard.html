@@ -1,0 +1,762 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Tyaira{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1><i data-feather="shield" class="admin-icon"></i> Admin Dashboard</h1>
+        <div class="admin-actions">
+            <button onclick="refreshData()" class="btn btn-secondary">
+                <i data-feather="refresh-cw"></i> Refresh
+            </button>
+            <button onclick="exportData()" class="btn btn-primary">
+                <i data-feather="download"></i> Export Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <div class="stat-icon"><i data-feather="users"></i></div>
+            <div class="stat-content">
+                <h3>Total Users</h3>
+                <div class="stat-number">{{ stats.total_users }}</div>
+                <div class="stat-change positive">+{{ stats.new_users_today }} today</div>
+            </div>
+        </div>
+
+        <div class="stat-card success">
+            <div class="stat-icon"><i data-feather="credit-card"></i></div>
+            <div class="stat-content">
+                <h3>Subscribers</h3>
+                <div class="stat-number">{{ stats.total_subscribers }}</div>
+                <div class="stat-change">{{ stats.subscription_rate }}% conversion</div>
+            </div>
+        </div>
+
+        <div class="stat-card warning">
+            <div class="stat-icon"><i data-feather="dollar-sign"></i></div>
+            <div class="stat-content">
+                <h3>Monthly Revenue</h3>
+                <div class="stat-number">${{ "%.2f"|format(stats.monthly_revenue) }}</div>
+                <div class="stat-change positive">+{{ stats.revenue_growth }}% vs last month</div>
+            </div>
+        </div>
+
+        <div class="stat-card info">
+            <div class="stat-icon"><i data-feather="file-text"></i></div>
+            <div class="stat-content">
+                <h3>Tests Taken</h3>
+                <div class="stat-number">{{ stats.total_tests }}</div>
+                <div class="stat-change">{{ stats.tests_today }} today</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <h3><i data-feather="trending-up"></i> User Growth (Last 30 Days)</h3>
+            <canvas id="userGrowthChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3><i data-feather="pie-chart"></i> User Distribution</h3>
+            <canvas id="userDistributionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Revenue Analytics -->
+    <div class="revenue-section">
+        <h2><i data-feather="bar-chart-2"></i> Revenue Analytics</h2>
+        <div class="revenue-grid">
+            <div class="revenue-card">
+                <h4>Today</h4>
+                <div class="revenue-amount">${{ "%.2f"|format(stats.revenue_today) }}</div>
+                <div class="revenue-count">{{ stats.payments_today }} payments</div>
+            </div>
+            <div class="revenue-card">
+                <h4>This Week</h4>
+                <div class="revenue-amount">${{ "%.2f"|format(stats.revenue_week) }}</div>
+                <div class="revenue-count">{{ stats.payments_week }} payments</div>
+            </div>
+            <div class="revenue-card">
+                <h4>This Month</h4>
+                <div class="revenue-amount">${{ "%.2f"|format(stats.revenue_month) }}</div>
+                <div class="revenue-count">{{ stats.payments_month }} payments</div>
+            </div>
+            <div class="revenue-card">
+                <h4>All Time</h4>
+                <div class="revenue-amount">${{ "%.2f"|format(stats.revenue_total) }}</div>
+                <div class="revenue-count">{{ stats.payments_total }} payments</div>
+            </div>
+        </div>
+        <div class="chart-card full-width">
+            <h3><i data-feather="activity"></i> Revenue Trend (Last 30 Days)</h3>
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Test Performance Analytics -->
+    <div class="test-analytics-section">
+        <h2><i data-feather="target"></i> Test Performance Analytics</h2>
+        <div class="performance-grid">
+            <div class="performance-card">
+                <h4>Average Score</h4>
+                <div class="performance-number">{{ "%.1f"|format(stats.avg_score) }}%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ stats.avg_score }}%"></div>
+                </div>
+            </div>
+            <div class="performance-card">
+                <h4>Pass Rate</h4>
+                <div class="performance-number">{{ "%.1f"|format(stats.pass_rate) }}%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill success" style="width: {{ stats.pass_rate }}%"></div>
+                </div>
+            </div>
+            <div class="performance-card">
+                <h4>Avg Time/Test</h4>
+                <div class="performance-number">{{ stats.avg_time }} min</div>
+            </div>
+            <div class="performance-card">
+                <h4>Completion Rate</h4>
+                <div class="performance-number">{{ "%.1f"|format(stats.completion_rate) }}%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Analytics -->
+    <div class="question-analytics-section">
+        <h2><i data-feather="help-circle"></i> Question Performance</h2>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Questions</th>
+                        <th>Avg Correct %</th>
+                        <th>Difficulty</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in stats.category_performance %}
+                    <tr>
+                        <td><strong>{{ cat.category }}</strong></td>
+                        <td>{{ cat.question_count }}</td>
+                        <td>
+                            <span class="percentage {% if cat.avg_correct >= 70 %}success{% elif cat.avg_correct >= 50 %}warning{% else %}danger{% endif %}">
+                                {{ "%.1f"|format(cat.avg_correct) }}%
+                            </span>
+                        </td>
+                        <td>
+                            <span class="difficulty-badge {{ cat.difficulty }}">
+                                {{ cat.difficulty|capitalize }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge {% if cat.avg_correct >= 70 %}good{% elif cat.avg_correct >= 50 %}medium{% else %}needs-attention{% endif %}">
+                                {% if cat.avg_correct >= 70 %}Performing Well
+                                {% elif cat.avg_correct >= 50 %}Average
+                                {% else %}Needs Review
+                                {% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-section">
+        <h2><i data-feather="activity"></i> Recent Activity</h2>
+        <div class="activity-grid">
+            <div class="activity-card">
+                <h4>Recent Sign-ups</h4>
+                <div class="activity-list">
+                    {% for user in stats.recent_signups %}
+                    <div class="activity-item">
+                        <i data-feather="user-plus"></i>
+                        <span>{{ user.username }}</span>
+                        <small>{{ user.created_at|timesince }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <h4>Recent Subscriptions</h4>
+                <div class="activity-list">
+                    {% for sub in stats.recent_subscriptions %}
+                    <div class="activity-item">
+                        <i data-feather="credit-card"></i>
+                        <span>{{ sub.user.username }}</span>
+                        <small>${{ "%.2f"|format(sub.amount) }} - {{ sub.created_at|timesince }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <h4>Recent Tests</h4>
+                <div class="activity-list">
+                    {% for test in stats.recent_tests %}
+                    <div class="activity-item">
+                        <i data-feather="file-text"></i>
+                        <span>{{ test.user.username }}</span>
+                        <small>Score: {{ test.score }}/{{ test.total_questions }} - {{ test.test_date|timesince }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-section">
+        <h2><i data-feather="zap"></i> Quick Actions</h2>
+        <div class="actions-grid">
+            <a href="{{ url_for('admin_users') }}" class="action-btn">
+                <i data-feather="users"></i>
+                <span>Manage Users</span>
+            </a>
+            <a href="{{ url_for('admin_questions') }}" class="action-btn">
+                <i data-feather="help-circle"></i>
+                <span>Manage Questions</span>
+            </a>
+            <a href="{{ url_for('admin_transactions') }}" class="action-btn">
+                <i data-feather="dollar-sign"></i>
+                <span>View Transactions</span>
+            </a>
+            <a href="{{ url_for('admin_plans') }}" class="action-btn">
+                <i data-feather="package"></i>
+                <span>Manage Plans</span>
+            </a>
+            <a href="{{ url_for('admin_files') }}" class="action-btn">
+                <i data-feather="file"></i>
+                <span>Manage Files</span>
+            </a>
+            <a href="{{ url_for('admin_analytics') }}" class="action-btn">
+                <i data-feather="bar-chart-2"></i>
+                <span>Advanced Analytics</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.admin-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.stat-card.primary { border-left: 4px solid #007bff; }
+.stat-card.success { border-left: 4px solid #28a745; }
+.stat-card.warning { border-left: 4px solid #ffc107; }
+.stat-card.info { border-left: 4px solid #17a2b8; }
+
+.stat-icon {
+    background: #f8f9fa;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon i {
+    width: 30px;
+    height: 30px;
+    color: #333;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.stat-change {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.stat-change.positive {
+    color: #28a745;
+}
+
+/* Charts */
+.charts-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.chart-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.chart-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Revenue Section */
+.revenue-section {
+    margin-bottom: 2rem;
+}
+
+.revenue-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.revenue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.revenue-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.revenue-card h4 {
+    margin: 0 0 1rem 0;
+    color: #666;
+    font-weight: 500;
+}
+
+.revenue-amount {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #28a745;
+    margin-bottom: 0.5rem;
+}
+
+.revenue-count {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Performance Grid */
+.test-analytics-section,
+.question-analytics-section {
+    margin-bottom: 2rem;
+}
+
+.test-analytics-section h2,
+.question-analytics-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.performance-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.performance-card h4 {
+    margin: 0 0 1rem 0;
+    color: #666;
+    font-weight: 500;
+}
+
+.performance-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+    background: #e9ecef;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #007bff;
+    transition: width 0.3s;
+}
+
+.progress-fill.success {
+    background: #28a745;
+}
+
+/* Table */
+.table-container {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.data-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+
+.percentage {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.percentage.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.percentage.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.percentage.danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.difficulty-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.difficulty-badge.easy {
+    background: #d4edda;
+    color: #155724;
+}
+
+.difficulty-badge.medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.difficulty-badge.hard {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-badge.good {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.needs-attention {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Activity Section */
+.activity-section {
+    margin-bottom: 2rem;
+}
+
+.activity-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.activity-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.activity-card h4 {
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.activity-item:hover {
+    background: #f8f9fa;
+}
+
+.activity-item i {
+    width: 20px;
+    height: 20px;
+    color: #007bff;
+}
+
+.activity-item span {
+    flex: 1;
+    font-weight: 500;
+}
+
+.activity-item small {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+/* Quick Actions */
+.quick-actions-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.action-btn {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-decoration: none;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    color: #007bff;
+}
+
+.action-btn i {
+    width: 30px;
+    height: 30px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .stats-grid,
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// User Growth Chart
+const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+new Chart(userGrowthCtx, {
+    type: 'line',
+    data: {
+        labels: {{ stats.user_growth_labels|tojson }},
+        datasets: [{
+            label: 'New Users',
+            data: {{ stats.user_growth_data|tojson }},
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// User Distribution Chart
+const userDistCtx = document.getElementById('userDistributionChart').getContext('2d');
+new Chart(userDistCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Subscribers', 'Free Users'],
+        datasets: [{
+            data: [{{ stats.total_subscribers }}, {{ stats.total_users - stats.total_subscribers }}],
+            backgroundColor: ['#28a745', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Revenue Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+new Chart(revenueCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ stats.revenue_labels|tojson }},
+        datasets: [{
+            label: 'Revenue ($)',
+            data: {{ stats.revenue_data|tojson }},
+            backgroundColor: '#28a745'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+function refreshData() {
+    location.reload();
+}
+
+function exportData() {
+    window.location.href = '{{ url_for("admin_export_data") }}';
+}
+</script>
+{% endblock %}
