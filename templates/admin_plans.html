@@ -220,13 +220,15 @@ function closePlanModal() {
 function handlePlanTypeChange() {
     const planType = document.getElementById('planType').value;
     const durationGroup = document.getElementById('durationGroup');
+    const durationInput = document.getElementById('durationMonths');
     const testAccessRow = document.getElementById('testAccessRow');
     const creditsRow = document.getElementById('creditsRow');
     
     if (planType === 'usage') {
         // Usage-based plan
         durationGroup.style.display = 'none';
-        document.getElementById('durationMonths').value = 0;
+        durationInput.value = 0;
+        durationInput.removeAttribute('required'); // Remove required for hidden field
         document.getElementById('unlimitedTests').checked = false;
         document.getElementById('unlimitedTests').disabled = true;
         creditsRow.style.display = 'flex';
@@ -234,7 +236,8 @@ function handlePlanTypeChange() {
     } else {
         // Subscription plan
         durationGroup.style.display = 'block';
-        document.getElementById('durationMonths').value = 1;
+        durationInput.value = 1;
+        durationInput.setAttribute('required', 'required'); // Add required back
         document.getElementById('unlimitedTests').disabled = false;
         testAccessRow.style.display = 'flex';
         handleUnlimitedTestsChange();
