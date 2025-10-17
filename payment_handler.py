@@ -160,21 +160,31 @@ class PaynowHandler:
                 print(f"{'='*60}")
                 
                 # Try to get error from multiple sources
-                error_msg = 'Payment initiation failed'
-                if hasattr(response, 'errors'):
-                    error_msg = response.errors
+                error_msg = 'Payment initiation failed - no error details provided'
+                
+                # Check for errors attribute
+                if hasattr(response, 'errors') and response.errors:
+                    error_msg = str(response.errors)
                     print(f"Error from response.errors: {error_msg}")
-                if hasattr(response, 'error'):
-                    error_msg = response.error
+                    print(f"Error type: {type(response.errors)}")
+                
+                # Check for error attribute (singular)
+                if hasattr(response, 'error') and response.error:
+                    error_msg = str(response.error)
                     print(f"Error from response.error: {error_msg}")
+                    print(f"Error type: {type(response.error)}")
                 
                 # Show all response attributes for debugging
                 print(f"Response attributes:")
                 for attr, value in response.__dict__.items():
-                    print(f"   {attr}: {value}")
+                    print(f"   {attr}: {value} (type: {type(value).__name__})")
                 
                 print(f"Response success: {response.success}")
                 print(f"{'='*60}\n")
+                
+                # Ensure error_msg is always a string
+                if not isinstance(error_msg, str):
+                    error_msg = str(error_msg)
                 
                 return {
                     'success': False,
