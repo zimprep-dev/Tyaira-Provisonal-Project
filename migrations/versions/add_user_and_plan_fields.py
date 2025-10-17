@@ -1,7 +1,7 @@
 """add user and plan fields
 
 Revision ID: add_user_and_plan_fields
-Revises: 4b7f0b058715
+Revises: add_payment_models
 Create Date: 2025-10-17 09:58:00.000000
 
 """
@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 # revision identifiers, used by Alembic.
 revision = 'add_user_and_plan_fields'
-down_revision = '4b7f0b058715'
+down_revision = 'add_payment_models'
 branch_labels = None
 depends_on = None
 
