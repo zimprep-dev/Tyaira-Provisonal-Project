@@ -321,9 +321,60 @@ document.addEventListener('DOMContentLoaded', () => {
 /* User Management Specific Styles */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7fafc;
+    flex-shrink: 0;
+}
+
+.stat-icon i {
+    width: 24px;
+    height: 24px;
+    color: #4a5568;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #718096;
+    font-weight: 500;
 }
 
 .stat-card.premium {
@@ -337,6 +388,10 @@ document.addEventListener('DOMContentLoaded', () => {
     color: white;
 }
 
+.stat-card.premium .stat-icon i {
+    color: white;
+}
+
 .stat-card.active {
     background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
     color: white;
@@ -345,6 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
 .stat-card.active .stat-icon,
 .stat-card.active .stat-number,
 .stat-card.active .stat-label {
+    color: white;
+}
+
+.stat-card.active .stat-icon i {
     color: white;
 }
 
@@ -370,6 +429,10 @@ document.addEventListener('DOMContentLoaded', () => {
     color: white;
 }
 
+.stat-card.new-users .stat-icon i {
+    color: white;
+}
+
 .stat-card.tests {
     background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
     color: white;
@@ -378,6 +441,10 @@ document.addEventListener('DOMContentLoaded', () => {
 .stat-card.tests .stat-icon,
 .stat-card.tests .stat-number,
 .stat-card.tests .stat-label {
+    color: white;
+}
+
+.stat-card.tests .stat-icon i {
     color: white;
 }
 
@@ -392,6 +459,10 @@ document.addEventListener('DOMContentLoaded', () => {
     color: white;
 }
 
+.stat-card.revenue .stat-icon i {
+    color: white;
+}
+
 .stat-card.conversion {
     background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
     color: white;
@@ -400,6 +471,10 @@ document.addEventListener('DOMContentLoaded', () => {
 .stat-card.conversion .stat-icon,
 .stat-card.conversion .stat-number,
 .stat-card.conversion .stat-label {
+    color: white;
+}
+
+.stat-card.conversion .stat-icon i {
     color: white;
 }
 

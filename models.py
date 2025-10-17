@@ -13,6 +13,7 @@ class User(UserMixin, db.Model):
     is_subscriber = db.Column(db.Boolean, default=False)
     subscription_date = db.Column(db.DateTime)
     subscription_end_date = db.Column(db.DateTime)  # When subscription access ends
+    subscription_plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plan.id'))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     tests_taken = db.relationship('TestResult', backref='user', lazy=True)
     downloads_count = db.Column(db.Integer, default=0)
@@ -138,11 +139,14 @@ class SubscriptionPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)  # e.g., "1 Month", "3 Months", "12 Months"
     duration_days = db.Column(db.Integer, nullable=False)  # 30, 90, 365
+    duration_months = db.Column(db.Integer, nullable=False, default=1)  # 1, 3, 12
     price = db.Column(db.Float, nullable=False)  # in USD
     currency = db.Column(db.String(3), default='USD')
     description = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
+    is_featured = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    subscribers = db.relationship('User', backref='subscription_plan', lazy=True)
 
 class PendingPayment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
