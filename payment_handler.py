@@ -38,38 +38,58 @@ class PaynowHandler:
         Supports: Render, Heroku, Railway, Vercel, and local development
         """
         # 1. Check for explicitly set BASE_URL in environment
-        if os.getenv('BASE_URL'):
-            return os.getenv('BASE_URL').rstrip('/')
+        base_url = os.getenv('BASE_URL')
+        if base_url:
+            url = base_url.rstrip('/')
+            print(f"📍 Using BASE_URL from environment: {url}")
+            return url
         
         # 2. Check for Render
         if os.getenv('RENDER'):
             render_service = os.getenv('RENDER_EXTERNAL_URL') or os.getenv('RENDER_SERVICE_NAME')
             if render_service:
                 if render_service.startswith('http'):
-                    return render_service.rstrip('/')
+                    url = render_service.rstrip('/')
                 else:
-                    return f"https://{render_service}.onrender.com"
+                    url = f"https://{render_service}.onrender.com"
+                print(f"📍 Using Render URL: {url}")
+                return url
         
         # 3. Check for Heroku
         if os.getenv('DYNO'):
             app_name = os.getenv('HEROKU_APP_NAME')
             if app_name:
-                return f"https://{app_name}.herokuapp.com"
+                url = f"https://{app_name}.herokuapp.com"
+                print(f"📍 Using Heroku URL: {url}")
+                return url
         
         # 4. Check for Railway
-        if os.getenv('RAILWAY_STATIC_URL'):
-            return os.getenv('RAILWAY_STATIC_URL').rstrip('/')
+        railway_url = os.getenv('RAILWAY_STATIC_URL')
+        if railway_url:
+            url = railway_url.rstrip('/')
+            print(f"📍 Using Railway URL: {url}")
+            return url
         
         # 5. Check for Vercel
-        if os.getenv('VERCEL_URL'):
-            return f"https://{os.getenv('VERCEL_URL')}"
+        vercel_url = os.getenv('VERCEL_URL')
+        if vercel_url:
+            # VERCEL_URL doesn't include protocol, so add it
+            url = f"https://{vercel_url}"
+            print(f"📍 Using Vercel URL: {url}")
+            return url
         
         # 6. Check for production environment variable
-        if os.getenv('FLASK_ENV') == 'production' and os.getenv('PRODUCTION_URL'):
-            return os.getenv('PRODUCTION_URL').rstrip('/')
+        if os.getenv('FLASK_ENV') == 'production':
+            prod_url = os.getenv('PRODUCTION_URL')
+            if prod_url:
+                url = prod_url.rstrip('/')
+                print(f"📍 Using PRODUCTION_URL: {url}")
+                return url
         
         # 7. Default to localhost for development
-        return 'http://localhost:5000'
+        url = 'http://localhost:5000'
+        print(f"📍 Using default localhost: {url}")
+        return url
         
     def create_payment(self, user, plan, reference):
         """
