@@ -30,7 +30,7 @@
             <div class="stat-icon"><i data-feather="star"></i></div>
             <div class="stat-info">
                 <div class="stat-number">{{ summary.premium_users }}</div>
-                <div class="stat-label">Premium Users</div>
+                <div class="stat-label">Premium Subscribers</div>
             </div>
         </div>
         <div class="stat-card">
@@ -40,18 +40,39 @@
                 <div class="stat-label">Free Users</div>
             </div>
         </div>
+        <div class="stat-card new-users">
+            <div class="stat-icon"><i data-feather="user-plus"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ summary.new_users_this_month }}</div>
+                <div class="stat-label">New This Month</div>
+            </div>
+        </div>
         <div class="stat-card active">
             <div class="stat-icon"><i data-feather="activity"></i></div>
             <div class="stat-info">
-                <div class="stat-number">{{ summary.active_users }}</div>
-                <div class="stat-label">Active Users</div>
+                <div class="stat-number">{{ summary.active_this_week }}</div>
+                <div class="stat-label">Active This Week</div>
             </div>
         </div>
-        <div class="stat-card inactive">
-            <div class="stat-icon"><i data-feather="user-x"></i></div>
+        <div class="stat-card tests">
+            <div class="stat-icon"><i data-feather="file-text"></i></div>
             <div class="stat-info">
-                <div class="stat-number">{{ summary.inactive_users }}</div>
-                <div class="stat-label">Inactive Users</div>
+                <div class="stat-number">{{ summary.total_tests }}</div>
+                <div class="stat-label">Total Tests Taken</div>
+            </div>
+        </div>
+        <div class="stat-card revenue">
+            <div class="stat-icon"><i data-feather="dollar-sign"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">${{ "%.2f"|format(summary.total_revenue) }}</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+        </div>
+        <div class="stat-card conversion">
+            <div class="stat-icon"><i data-feather="trending-up"></i></div>
+            <div class="stat-info">
+                <div class="stat-number">{{ "%.1f"|format((summary.premium_users / summary.total_users * 100) if summary.total_users > 0 else 0) }}%</div>
+                <div class="stat-label">Conversion Rate</div>
             </div>
         </div>
     </div>
@@ -335,6 +356,50 @@ document.addEventListener('DOMContentLoaded', () => {
 .stat-card.inactive .stat-icon,
 .stat-card.inactive .stat-number,
 .stat-card.inactive .stat-label {
+    color: white;
+}
+
+.stat-card.new-users {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+}
+
+.stat-card.new-users .stat-icon,
+.stat-card.new-users .stat-number,
+.stat-card.new-users .stat-label {
+    color: white;
+}
+
+.stat-card.tests {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    color: white;
+}
+
+.stat-card.tests .stat-icon,
+.stat-card.tests .stat-number,
+.stat-card.tests .stat-label {
+    color: white;
+}
+
+.stat-card.revenue {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.stat-card.revenue .stat-icon,
+.stat-card.revenue .stat-number,
+.stat-card.revenue .stat-label {
+    color: white;
+}
+
+.stat-card.conversion {
+    background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+    color: white;
+}
+
+.stat-card.conversion .stat-icon,
+.stat-card.conversion .stat-number,
+.stat-card.conversion .stat-label {
     color: white;
 }
 

@@ -443,13 +443,34 @@ def admin_users():
     # Sort by tests taken (most active first)
     user_data.sort(key=lambda x: x['tests_taken'], reverse=True)
     
+    # Calculate additional statistics
+    total_tests = TestResult.query.count()
+    total_revenue = db.session.query(func.sum(Transaction.amount)).filter(
+        Transaction.status == 'completed'
+    ).scalar() or 0
+    
+    # New registrations this month
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    new_users_this_month = User.query.filter(User.created_at >= month_start).count()
+    
+    # Active users this week (users who took a test in the last 7 days)
+    week_ago = now - timedelta(days=7)
+    active_this_week = db.session.query(TestResult.user_id).filter(
+        TestResult.test_date >= week_ago
+    ).distinct().count()
+    
     # Summary statistics
     summary = {
         'total_users': len(users),
         'premium_users': sum(1 for u in user_data if u['is_subscriber']),
         'free_users': sum(1 for u in user_data if not u['is_subscriber']),
         'active_users': sum(1 for u in user_data if u['tests_taken'] > 0),
-        'inactive_users': sum(1 for u in user_data if u['tests_taken'] == 0)
+        'inactive_users': sum(1 for u in user_data if u['tests_taken'] == 0),
+        'total_tests': total_tests,
+        'total_revenue': total_revenue,
+        'new_users_this_month': new_users_this_month,
+        'active_this_week': active_this_week
     }
     
     return render_template('admin_users.html', users=user_data, summary=summary)
