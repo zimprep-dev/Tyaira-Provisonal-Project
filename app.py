@@ -1376,12 +1376,20 @@ def payment_notify():
         if not reference:
             return 'Missing reference', 400
         
+        # Log the notification data
+        app.logger.info(f"📨 Payment notification received:")
+        app.logger.info(f"   Reference: {reference}")
+        app.logger.info(f"   Status: {status}")
+        app.logger.info(f"   Amount: {amount}")
+        app.logger.info(f"   Paynow Reference: {paynow_ref}")
+        
         # Verify and process payment
         success = payment_handler.verify_payment(
             reference=reference,
             status=status,
             paynow_reference=paynow_ref,
-            hash_value=hash_value
+            hash_value=hash_value,
+            amount=amount  # Pass actual paid amount
         )
         
         if success:

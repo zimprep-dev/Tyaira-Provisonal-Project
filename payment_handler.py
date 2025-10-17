@@ -217,7 +217,7 @@ class PaynowHandler:
                 'error': f"{type(e).__name__}: {str(e)}"
             }
     
-    def verify_payment(self, reference, status, paynow_reference=None, hash_value=None):
+    def verify_payment(self, reference, status, paynow_reference=None, hash_value=None, amount=None):
         """
         Verify and process a payment notification from Paynow
         Returns: True if payment was processed successfully
@@ -238,6 +238,14 @@ class PaynowHandler:
             pending.status = status.lower()
             pending.paynow_reference = paynow_reference
             pending.updated_at = datetime.now(timezone.utc)
+            
+            # Update amount with actual paid amount from Paynow
+            if amount:
+                try:
+                    pending.amount = float(amount)
+                    print(f"💰 Updated payment amount to actual paid amount: ${amount}")
+                except (ValueError, TypeError):
+                    print(f"⚠️ Could not parse amount: {amount}")
             
             # If payment is confirmed
             if status.lower() in ['paid', 'delivered', 'sent']:
