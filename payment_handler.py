@@ -60,11 +60,15 @@ class PaynowHandler:
         if os.getenv('RAILWAY_STATIC_URL'):
             return os.getenv('RAILWAY_STATIC_URL').rstrip('/')
         
-        # 5. Check for production environment variable
+        # 5. Check for Vercel
+        if os.getenv('VERCEL_URL'):
+            return f"https://{os.getenv('VERCEL_URL')}"
+        
+        # 6. Check for production environment variable
         if os.getenv('FLASK_ENV') == 'production' and os.getenv('PRODUCTION_URL'):
             return os.getenv('PRODUCTION_URL').rstrip('/')
         
-        # 6. Default to localhost for development
+        # 7. Default to localhost for development
         return 'http://localhost:5000'
         
     def create_payment(self, user, plan, reference):
@@ -87,8 +91,8 @@ class PaynowHandler:
                 # Development: Use mock gateway
                 return {
                     'success': True,
-                    'payment_url': f'http://localhost:5000/payment/mock?ref={reference}',
-                    'poll_url': f'http://localhost:5000/payment/poll?ref={reference}'
+                    'payment_url': f'{self.base_url}/payment/mock?ref={reference}',
+                    'poll_url': f'{self.base_url}/payment/poll?ref={reference}'
                 }
             
             # Check if payment initiation was successful
