@@ -1479,8 +1479,9 @@ def check_payment(reference):
 @app.route('/payment/mock')
 def mock_payment():
     """Mock payment page for testing (development only)"""
-    if os.getenv('FLASK_ENV') == 'production':
-        return 'Not available', 404
+    # Disable mock payment in production (Vercel or when BASE_URL is set)
+    if os.getenv('VERCEL') or os.getenv('BASE_URL'):
+        return 'Mock payment not available in production', 404
     
     reference = request.args.get('ref')
     return render_template('mock_payment.html', reference=reference)
@@ -1488,8 +1489,9 @@ def mock_payment():
 @app.route('/payment/mock/complete', methods=['POST'])
 def mock_payment_complete():
     """Complete mock payment (development only)"""
-    if os.getenv('FLASK_ENV') == 'production':
-        return 'Not available', 404
+    # Disable mock payment in production (Vercel or when BASE_URL is set)
+    if os.getenv('VERCEL') or os.getenv('BASE_URL'):
+        return 'Mock payment not available in production', 404
     
     reference = request.form.get('reference')
     action = request.form.get('action')  # 'pay' or 'cancel'

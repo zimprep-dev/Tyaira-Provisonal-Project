@@ -18,11 +18,15 @@ class PaynowHandler:
         self.return_url = f"{self.base_url}/payment/return"
         self.result_url = f"{self.base_url}/payment/notify"
         
+        # Determine if we're in production (Vercel or explicitly set)
+        self.is_production = bool(os.getenv('VERCEL')) or bool(os.getenv('BASE_URL'))
+        
         # Log the detected URLs for debugging
         print(f"🌐 Paynow Handler initialized:")
         print(f"   Base URL: {self.base_url}")
         print(f"   Return URL: {self.return_url}")
         print(f"   Result URL: {self.result_url}")
+        print(f"   Production Mode: {self.is_production}")
         
         # Initialize Paynow SDK
         self.paynow = Paynow(
@@ -104,11 +108,13 @@ class PaynowHandler:
             payment.add(f"{plan.name} Subscription", plan.price)
             
             # Send payment request to Paynow
-            if os.getenv('FLASK_ENV') == 'production':
+            if self.is_production:
                 # Production: Send to real Paynow
+                print(f"💳 Sending payment to Paynow for {reference}")
                 response = self.paynow.send(payment)
             else:
                 # Development: Use mock gateway
+                print(f"🧪 Using mock payment gateway for {reference}")
                 return {
                     'success': True,
                     'payment_url': f'{self.base_url}/payment/mock?ref={reference}',
@@ -147,7 +153,7 @@ class PaynowHandler:
                 return False
             
             # In production, verify the hash
-            if os.getenv('FLASK_ENV') == 'production' and hash_value:
+            if self.is_production and hash_value:
                 # TODO: Verify hash matches
                 pass
             
@@ -221,7 +227,7 @@ class PaynowHandler:
         Returns: dict with status information
         """
         try:
-            if os.getenv('FLASK_ENV') == 'production':
+            if self.is_production:
                 # Production: Check status with Paynow SDK
                 status = self.paynow.check_transaction_status(poll_url)
                 
