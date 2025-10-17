@@ -13,6 +13,7 @@ class User(UserMixin, db.Model):
     is_subscriber = db.Column(db.Boolean, default=False)
     subscription_date = db.Column(db.DateTime)
     subscription_end_date = db.Column(db.DateTime)  # When subscription access ends
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     tests_taken = db.relationship('TestResult', backref='user', lazy=True)
     downloads_count = db.Column(db.Integer, default=0)
     
