@@ -1699,6 +1699,12 @@ def admin_delete_user(user_id):
         username = user.username
         
         # Delete related records (in correct order to avoid foreign key violations)
+        # First delete answers for all test results
+        test_results = TestResult.query.filter_by(user_id=user_id).all()
+        for test_result in test_results:
+            Answer.query.filter_by(test_result_id=test_result.id).delete()
+        
+        # Then delete the rest
         TestSession.query.filter_by(user_id=user_id).delete()  # Active test sessions
         TestResult.query.filter_by(user_id=user_id).delete()   # Test results
         Transaction.query.filter_by(user_id=user_id).delete()  # Transactions

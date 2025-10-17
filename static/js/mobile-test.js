@@ -411,7 +411,9 @@ const mobileTestInterface = {
         clearInterval(this.timerInterval);
         
         // Check if this is an offline session
-        if (this.sessionId && this.sessionId.startsWith('offline-')) {
+        // Convert sessionId to string to handle both string and number types
+        const sessionIdStr = String(this.sessionId || '');
+        if (sessionIdStr && sessionIdStr.startsWith('offline-')) {
             // Offline mode - save results locally
             this.saveOfflineResults();
             this.showOfflineResults();
