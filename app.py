@@ -97,21 +97,74 @@ def terms():
 def privacy():
     return render_template('privacy.html')
 
+def validate_password(password):
+    """
+    Validate password meets security requirements:
+    - At least 8 characters long
+    - Contains uppercase letter
+    - Contains lowercase letter
+    - Contains number
+    - Contains special character
+    """
+    import re
+    
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one number"
+    
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)"
+    
+    return True, "Password is strong"
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
+        confirm_password = request.form.get('confirm_password')
+        
+        # Validate username
+        if len(username) < 3:
+            flash('Username must be at least 3 characters long', 'error')
+            return redirect(url_for('register'))
         
         if User.query.filter_by(username=username).first():
-            flash('Username already exists.')
+            flash('Username already exists', 'error')
+            return redirect(url_for('register'))
+        
+        # Validate email
+        import re
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            flash('Please enter a valid email address', 'error')
             return redirect(url_for('register'))
         
         if User.query.filter_by(email=email).first():
-            flash('Email address already registered.')
+            flash('Email address already registered', 'error')
             return redirect(url_for('register'))
         
+        # Validate password confirmation
+        if password != confirm_password:
+            flash('Passwords do not match', 'error')
+            return redirect(url_for('register'))
+        
+        # Validate password strength
+        is_valid, message = validate_password(password)
+        if not is_valid:
+            flash(message, 'error')
+            return redirect(url_for('register'))
+        
+        # Create user
         user = User(
             username=username,
             email=email,
@@ -120,7 +173,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        flash('Registration successful! Please login.')
+        flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
     
     return render_template('register.html')
@@ -338,61 +391,6 @@ def test_review(test_result_id):
         return render_template('test_review.html', test_result=test_result, incorrect_answers=incorrect_answers)
 
 # CMS Admin Routes
-@app.route('/admin/analytics')
-@login_required
-def admin_analytics():
-    if current_user.username != 'admin':
-        flash('Access denied.')
-        return redirect(url_for('dashboard'))
-
-    # Core stats
-    total_tests = TestResult.query.count()
-    avg_score_raw = db.session.query(func.avg(TestResult.score * 100.0 / TestResult.total_questions)).scalar()
-    average_score = round(avg_score_raw, 2) if avg_score_raw else 0
-
-    # Pass/Fail Rate (assuming 80% is a pass)
-    PASS_THRESHOLD = 80
-    pass_count = TestResult.query.filter((TestResult.score * 100.0 / TestResult.total_questions) >= PASS_THRESHOLD).count()
-    fail_count = total_tests - pass_count
-
-    # Performance by category
-    category_performance_raw = db.session.query(
-        TestCategory.name,
-        func.count(Answer.id).label('total'),
-        func.sum(case((Answer.is_correct, 1), else_=0)).label('correct')
-    ).join(Question, Question.category_id == TestCategory.id
-    ).join(Answer, Answer.question_id == Question.id
-    ).group_by(TestCategory.name).all()
-
-    category_performance = {
-        cat_name: round((correct / total) * 100, 2) if total > 0 else 0
-        for cat_name, total, correct in category_performance_raw
-    }
-
-    # Performance Trend (last 30 days)
-    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
-    daily_scores = db.session.query(
-        func.cast(TestResult.test_date, db.Date).label('date'),
-        func.avg(TestResult.score * 100.0 / TestResult.total_questions).label('avg_score')
-    ).filter(TestResult.test_date >= thirty_days_ago).group_by('date').order_by('date').all()
-
-    trend_labels = [d.date.strftime('%b %d') for d in daily_scores]
-    trend_data = [round(d.avg_score, 2) for d in daily_scores]
-
-    analytics_data = {
-        'total_tests': total_tests,
-        'average_score': average_score,
-        'pass_count': pass_count,
-        'fail_count': fail_count,
-        'performance_by_category': category_performance,
-        'performance_trend': {
-            'labels': trend_labels,
-            'data': trend_data
-        }
-    }
-    
-    return render_template('admin_analytics.html', data=analytics_data)
-
 @app.route('/admin/users')
 @login_required
 def admin_users():

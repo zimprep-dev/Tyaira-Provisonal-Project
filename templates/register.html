@@ -6,23 +6,61 @@
 <div class="auth-container">
     <div class="auth-card">
         <h2>Create Your Account</h2>
-        <form method="POST" class="auth-form">
+        <form method="POST" class="auth-form" id="registerForm">
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
+                <label for="username">Username <span class="required">*</span></label>
+                <input type="text" id="username" name="username" required minlength="3">
+                <small class="help-text">Minimum 3 characters</small>
             </div>
             
             <div class="form-group">
-                <label for="email">Email</label>
+                <label for="email">Email Address <span class="required">*</span></label>
                 <input type="email" id="email" name="email" required>
+                <small class="help-text">We'll never share your email</small>
             </div>
             
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">Password <span class="required">*</span></label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" name="password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('password')">
+                        <i data-feather="eye" id="password-eye"></i>
+                    </button>
+                </div>
+                
+                <!-- Password Strength Indicator -->
+                <div class="password-strength" id="passwordStrength">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strengthFill"></div>
+                    </div>
+                    <span class="strength-text" id="strengthText">Enter a password</span>
+                </div>
+                
+                <!-- Password Requirements -->
+                <div class="password-requirements">
+                    <p class="req-title">Password must contain:</p>
+                    <ul>
+                        <li id="req-length"><i data-feather="circle"></i> At least 8 characters</li>
+                        <li id="req-upper"><i data-feather="circle"></i> One uppercase letter</li>
+                        <li id="req-lower"><i data-feather="circle"></i> One lowercase letter</li>
+                        <li id="req-number"><i data-feather="circle"></i> One number</li>
+                        <li id="req-special"><i data-feather="circle"></i> One special character (!@#$%^&*)</li>
+                    </ul>
+                </div>
             </div>
             
-            <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password <span class="required">*</span></label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword('confirm_password')">
+                        <i data-feather="eye" id="confirm_password-eye"></i>
+                    </button>
+                </div>
+                <small class="help-text" id="passwordMatch"></small>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-full" id="submitBtn">Create Account</button>
         </form>
         
         <div class="auth-links">
@@ -30,4 +68,320 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    feather.replace();
+    
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // Password strength checker
+    password.addEventListener('input', checkPasswordStrength);
+    
+    // Confirm password matcher
+    confirmPassword.addEventListener('input', checkPasswordMatch);
+    
+    // Form submission validation
+    form.addEventListener('submit', (e) => {
+        if (!validateForm()) {
+            e.preventDefault();
+        }
+    });
+    
+    function checkPasswordStrength() {
+        const value = password.value;
+        const strengthFill = document.getElementById('strengthFill');
+        const strengthText = document.getElementById('strengthText');
+        
+        let strength = 0;
+        let feedback = [];
+        
+        // Check length
+        const lengthReq = document.getElementById('req-length');
+        if (value.length >= 8) {
+            strength += 20;
+            lengthReq.classList.add('met');
+        } else {
+            lengthReq.classList.remove('met');
+        }
+        
+        // Check uppercase
+        const upperReq = document.getElementById('req-upper');
+        if (/[A-Z]/.test(value)) {
+            strength += 20;
+            upperReq.classList.add('met');
+        } else {
+            upperReq.classList.remove('met');
+        }
+        
+        // Check lowercase
+        const lowerReq = document.getElementById('req-lower');
+        if (/[a-z]/.test(value)) {
+            strength += 20;
+            lowerReq.classList.add('met');
+        } else {
+            lowerReq.classList.remove('met');
+        }
+        
+        // Check number
+        const numberReq = document.getElementById('req-number');
+        if (/\d/.test(value)) {
+            strength += 20;
+            numberReq.classList.add('met');
+        } else {
+            numberReq.classList.remove('met');
+        }
+        
+        // Check special character
+        const specialReq = document.getElementById('req-special');
+        if (/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+            strength += 20;
+            specialReq.classList.add('met');
+        } else {
+            specialReq.classList.remove('met');
+        }
+        
+        // Update strength bar
+        strengthFill.style.width = strength + '%';
+        
+        // Update color and text
+        if (strength === 0) {
+            strengthFill.className = 'strength-fill';
+            strengthText.textContent = 'Enter a password';
+            strengthText.className = 'strength-text';
+        } else if (strength < 60) {
+            strengthFill.className = 'strength-fill weak';
+            strengthText.textContent = 'Weak password';
+            strengthText.className = 'strength-text weak';
+        } else if (strength < 100) {
+            strengthFill.className = 'strength-fill fair';
+            strengthText.textContent = 'Fair password';
+            strengthText.className = 'strength-text fair';
+        } else {
+            strengthFill.className = 'strength-fill strong';
+            strengthText.textContent = 'Strong password';
+            strengthText.className = 'strength-text strong';
+        }
+        
+        feather.replace();
+    }
+    
+    function checkPasswordMatch() {
+        const matchText = document.getElementById('passwordMatch');
+        
+        if (confirmPassword.value === '') {
+            matchText.textContent = '';
+            matchText.className = 'help-text';
+            return;
+        }
+        
+        if (password.value === confirmPassword.value) {
+            matchText.textContent = '✓ Passwords match';
+            matchText.className = 'help-text match';
+        } else {
+            matchText.textContent = '✗ Passwords do not match';
+            matchText.className = 'help-text no-match';
+        }
+    }
+    
+    function validateForm() {
+        const value = password.value;
+        
+        // Check all requirements
+        if (value.length < 8) {
+            Modal.alert('Password must be at least 8 characters long', 'error');
+            return false;
+        }
+        
+        if (!/[A-Z]/.test(value)) {
+            Modal.alert('Password must contain at least one uppercase letter', 'error');
+            return false;
+        }
+        
+        if (!/[a-z]/.test(value)) {
+            Modal.alert('Password must contain at least one lowercase letter', 'error');
+            return false;
+        }
+        
+        if (!/\d/.test(value)) {
+            Modal.alert('Password must contain at least one number', 'error');
+            return false;
+        }
+        
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+            Modal.alert('Password must contain at least one special character', 'error');
+            return false;
+        }
+        
+        if (password.value !== confirmPassword.value) {
+            Modal.alert('Passwords do not match', 'error');
+            return false;
+        }
+        
+        return true;
+    }
+});
+
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '-eye');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.setAttribute('data-feather', 'eye-off');
+    } else {
+        field.type = 'password';
+        icon.setAttribute('data-feather', 'eye');
+    }
+    
+    feather.replace();
+}
+</script>
+
+<style>
+.required {
+    color: #e53e3e;
+}
+
+.help-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+.help-text.match {
+    color: #38a169;
+    font-weight: 600;
+}
+
+.help-text.no-match {
+    color: #e53e3e;
+    font-weight: 600;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #718096;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.toggle-password:hover {
+    color: #2d3748;
+}
+
+.toggle-password i {
+    width: 20px;
+    height: 20px;
+}
+
+.password-strength {
+    margin-top: 0.5rem;
+}
+
+.strength-bar {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0;
+    transition: all 0.3s;
+    border-radius: 3px;
+}
+
+.strength-fill.weak {
+    background: #e53e3e;
+}
+
+.strength-fill.fair {
+    background: #ed8936;
+}
+
+.strength-fill.strong {
+    background: #38a169;
+}
+
+.strength-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.strength-text.weak {
+    color: #e53e3e;
+}
+
+.strength-text.fair {
+    color: #ed8936;
+}
+
+.strength-text.strong {
+    color: #38a169;
+}
+
+.password-requirements {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 8px;
+    border-left: 3px solid #4299e1;
+}
+
+.req-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.password-requirements ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.password-requirements li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.875rem;
+    color: #718096;
+    transition: all 0.2s;
+}
+
+.password-requirements li i {
+    width: 14px;
+    height: 14px;
+    color: #cbd5e0;
+}
+
+.password-requirements li.met {
+    color: #38a169;
+    font-weight: 600;
+}
+
+.password-requirements li.met i {
+    color: #38a169;
+}
+</style>
 {% endblock %}
