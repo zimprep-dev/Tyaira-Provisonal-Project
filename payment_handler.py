@@ -47,6 +47,9 @@ class PaynowHandler:
         base_url = os.getenv('BASE_URL')
         if base_url:
             url = base_url.rstrip('/')
+            # Ensure URL has protocol (http:// or https://)
+            if not url.startswith('http://') and not url.startswith('https://'):
+                url = f"https://{url}"
             print(f"📍 Using BASE_URL from environment: {url}")
             return url
         
@@ -162,17 +165,25 @@ class PaynowHandler:
                 # Try to get error from multiple sources
                 error_msg = 'Payment initiation failed - no error details provided'
                 
+                # Check for error in response.data dict (most reliable)
+                if hasattr(response, 'data') and isinstance(response.data, dict):
+                    if 'error' in response.data:
+                        error_msg = response.data['error']
+                        print(f"Error from response.data['error']: {error_msg}")
+                
                 # Check for errors attribute
-                if hasattr(response, 'errors') and response.errors:
+                elif hasattr(response, 'errors') and response.errors:
                     error_msg = str(response.errors)
                     print(f"Error from response.errors: {error_msg}")
                     print(f"Error type: {type(response.errors)}")
                 
                 # Check for error attribute (singular)
-                if hasattr(response, 'error') and response.error:
-                    error_msg = str(response.error)
-                    print(f"Error from response.error: {error_msg}")
-                    print(f"Error type: {type(response.error)}")
+                elif hasattr(response, 'error') and response.error:
+                    # Skip if error is a type object
+                    if not isinstance(response.error, type):
+                        error_msg = str(response.error)
+                        print(f"Error from response.error: {error_msg}")
+                        print(f"Error type: {type(response.error)}")
                 
                 # Show all response attributes for debugging
                 print(f"Response attributes:")
