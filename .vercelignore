@@ -1,0 +1,18 @@
+# Vercel ignore file
+.env
+.env.local
+.venv/
+__pycache__/
+*.pyc
+instance/
+migrations/
+.git/
+.gitignore
+*.md
+!VERCEL_DEPLOYMENT.md
+build.sh
+deploy.sh
+render.yaml
+Procfile
+nginx.conf
+tyaira.service
