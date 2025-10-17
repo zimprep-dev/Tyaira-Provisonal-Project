@@ -1698,10 +1698,11 @@ def admin_delete_user(user_id):
     try:
         username = user.username
         
-        # Delete related records
-        TestResult.query.filter_by(user_id=user_id).delete()
-        Transaction.query.filter_by(user_id=user_id).delete()
-        PendingPayment.query.filter_by(user_id=user_id).delete()
+        # Delete related records (in correct order to avoid foreign key violations)
+        TestSession.query.filter_by(user_id=user_id).delete()  # Active test sessions
+        TestResult.query.filter_by(user_id=user_id).delete()   # Test results
+        Transaction.query.filter_by(user_id=user_id).delete()  # Transactions
+        PendingPayment.query.filter_by(user_id=user_id).delete()  # Pending payments
         
         # Delete user
         db.session.delete(user)
