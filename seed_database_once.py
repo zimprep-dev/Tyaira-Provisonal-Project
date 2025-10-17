@@ -207,9 +207,20 @@ def seed_database(database_url):
                 
                 # Parse answer options
                 option_lines = re.findall(r'-\s+([A-D])\)\s+(.*)', options_block)
+                
+                # Debug: Show what we found
+                if len(option_lines) < 3:
+                    print(f"\n⚠️  Warning: Question {q_num} only has {len(option_lines)} options!")
+                    print(f"   Question: {question_text[:50]}...")
+                    print(f"   Options block: {options_block[:200]}")
+                
                 for letter, option_raw_text in option_lines:
                     is_correct = '✓' in option_raw_text
                     option_text = option_raw_text.replace('**', '').replace('✓', '').strip()
+                    
+                    # Debug: Show option details for first few questions
+                    if total_questions < 3:
+                        print(f"      Option {letter}: '{option_text[:30]}...' (Correct: {is_correct})")
                     
                     # Check if option_label column exists and include it in INSERT
                     try:
