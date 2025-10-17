@@ -1677,6 +1677,47 @@ def timesince(dt):
         months = int(seconds / 2592000)
         return f'{months} month{"s" if months != 1 else ""} ago'
 
+# Admin: Delete user
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+def admin_delete_user(user_id):
+    """Delete a user from the platform"""
+    if current_user.username != 'admin':
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    # Prevent deleting yourself
+    if user_id == current_user.id:
+        return jsonify({'success': False, 'message': 'You cannot delete your own account'}), 400
+    
+    user = User.query.get_or_404(user_id)
+    
+    # Prevent deleting other admins
+    if user.username == 'admin':
+        return jsonify({'success': False, 'message': 'Cannot delete admin accounts'}), 400
+    
+    try:
+        username = user.username
+        
+        # Delete related records
+        TestResult.query.filter_by(user_id=user_id).delete()
+        Transaction.query.filter_by(user_id=user_id).delete()
+        PendingPayment.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'User "{username}" and all associated data has been deleted'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error deleting user: {str(e)}'
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
 

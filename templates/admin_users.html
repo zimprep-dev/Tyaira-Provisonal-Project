@@ -152,9 +152,13 @@
                                 <button class="btn-icon" onclick="viewUserDetails({{ user.id }})" title="View Details">
                                     <i data-feather="eye"></i>
                                 </button>
+                                {% if user.username != 'admin' and user.id != current_user.id %}
+                                <button class="btn-icon btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')" title="Delete User">
+                                    <i data-feather="trash-2"></i>
+                                </button>
+                                {% endif %}
                             </div>
-                        </td>
-                    </tr>
+                        </td>                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -223,12 +227,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // View user details
     window.viewUserDetails = (userId) => {
-        // In a real implementation, fetch user details via API
-        alert(`View details for user ID: ${userId}\n\nThis feature can be expanded to show:\n- Full test history\n- Score trends\n- Activity timeline\n- Subscription management`);
+        // Using custom modal instead of alert
+        Modal.alert(
+            `View details for user ID: ${userId}<br><br>This feature can be expanded to show:<br>- Full test history<br>- Score trends<br>- Activity timeline<br>- Subscription management`,
+            'info',
+            'User Details'
+        );
     };
 
     window.hideUserDetailsModal = () => {
         document.getElementById('userDetailsModal').style.display = 'none';
+    };
+
+    // Delete user
+    window.deleteUser = async (userId, username) => {
+        const confirmed = await Modal.confirm(
+            `Are you sure you want to delete user <strong>"${username}"</strong>?<br><br>` +
+            `This action will permanently delete:<br>` +
+            `• User account<br>` +
+            `• All test results<br>` +
+            `• All transactions<br>` +
+            `• All payment records<br><br>` +
+            `<strong>This action cannot be undone!</strong>`,
+            'Delete User',
+            {
+                type: 'error',
+                icon: 'trash-2',
+                confirmText: 'Delete User',
+                confirmClass: 'btn-danger',
+                cancelText: 'Cancel'
+            }
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/admin/users/${userId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                await Modal.alert(data.message, 'success', 'User Deleted');
+                // Remove row from table
+                const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                if (row) {
+                    row.remove();
+                    filterUsers(); // Update visible count
+                }
+                // Reload page to update stats
+                location.reload();
+            } else {
+                await Modal.alert(data.message, 'error', 'Delete Failed');
+            }
+        } catch (error) {
+            await Modal.alert(
+                'An error occurred while deleting the user. Please try again.',
+                'error',
+                'Delete Failed'
+            );
+            console.error('Delete error:', error);
+        }
     };
 });
 </script>
@@ -467,6 +530,16 @@ document.addEventListener('DOMContentLoaded', () => {
 .btn-icon i {
     width: 16px;
     height: 16px;
+}
+
+.btn-icon.btn-danger {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.btn-icon.btn-danger:hover {
+    background: #fc8181;
+    color: white;
 }
 
 .table-footer {
