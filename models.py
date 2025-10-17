@@ -26,8 +26,18 @@ class User(UserMixin, db.Model):
             return True
         
         # If subscription was cancelled but still within the paid period
-        if self.subscription_end_date and datetime.now(timezone.utc) < self.subscription_end_date:
-            return True
+        if self.subscription_end_date:
+            # Get current time
+            now = datetime.now(timezone.utc)
+            
+            # Make subscription_end_date timezone-aware if it's naive
+            end_date = self.subscription_end_date
+            if end_date.tzinfo is None:
+                # Assume naive datetimes are UTC
+                end_date = end_date.replace(tzinfo=timezone.utc)
+            
+            if now < end_date:
+                return True
         
         return False
 
